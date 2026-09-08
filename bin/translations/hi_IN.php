@@ -1,0 +1,62 @@
+<?php
+/**
+ * हिन्दी (hi_IN) — अनुवाद सूची। स्रोत भाषा अंग्रेज़ी है।
+ *
+ * WordPress के hi_IN अनुवाद की तरह «आप» का प्रयोग। तकनीकी शब्द (URL, API,
+ * HTTP, 301, no404) जस के तस रखे गए हैं — हिन्दी WordPress में भी यही चलन है।
+ *
+ * @package no404
+ */
+
+return array(
+	'Settings' => 'सेटिंग्स',
+	'no404 – Auto 404 Redirect' => 'no404 – स्वचालित 404 रीडायरेक्ट',
+	'no404' => 'no404',
+	'Connection' => 'कनेक्शन',
+	'Behaviour' => 'व्यवहार',
+	'no404 address' => 'no404 पता',
+	'API key' => 'API कुंजी',
+	'Redirecting' => 'रीडायरेक्ट',
+	'Permanent redirects' => 'स्थायी रीडायरेक्ट',
+	'Cache lifetime' => 'कैश की अवधि',
+	'Timeout' => 'टाइमआउट',
+	'Excluded paths' => 'छोड़े जाने वाले पथ',
+	'Get your API key from the site settings page in your no404 dashboard. The key is used server-side only and never appears in your site\'s source code.' => 'अपनी API कुंजी no404 डैशबोर्ड के साइट सेटिंग्स पृष्ठ से लें। यह कुंजी केवल सर्वर पर इस्तेमाल होती है और आपकी साइट के सोर्स कोड में कभी नहीं दिखती।',
+	'Caching stops bots that hit the same dead URL over and over from burning through your monthly event quota. A shorter lifetime means higher quota usage.' => 'कैश उन बॉट्स को आपका मासिक इवेंट कोटा खर्च करने से रोकता है जो एक ही मृत URL को बार-बार खोलते हैं। अवधि जितनी कम होगी, कोटा उतनी ही तेज़ी से खर्च होगा।',
+	'You should not need to touch this — the default, %s, is the right address. Change it only if you host no404 on your own server. Leave the field empty to restore the default.' => 'इसे बदलने की ज़रूरत आमतौर पर नहीं पड़ती — डिफ़ॉल्ट पता %s ही सही है। इसे तभी बदलें जब आप no404 को अपने सर्वर पर चलाते हों। डिफ़ॉल्ट पर लौटने के लिए यह जगह खाली छोड़ दें।',
+	'Paste your key' => 'अपनी कुंजी यहाँ चिपकाएँ',
+	'Saved key: %s — leave this field empty to keep it.' => 'सहेजी गई कुंजी: %s — इसे बनाए रखने के लिए यह जगह खाली छोड़ दें।',
+	'Apply no404 redirects on pages that are not found' => 'न मिलने वाले पृष्ठों पर no404 रीडायरेक्ट लागू करें',
+	'Send every match as a 301 (permanent)' => 'हर मिलान को 301 (स्थायी) के रूप में भेजें',
+	'By default only manually defined redirects and high-scoring matches are sent as 301; speculative matches are sent as 302. A 301 is cached permanently by browsers and cannot be taken back — tick this box only if you are confident your catalogue is complete.' => 'डिफ़ॉल्ट रूप से केवल हाथ से बनाए गए रीडायरेक्ट और ऊँचे स्कोर वाले मिलान 301 के रूप में भेजे जाते हैं; अनुमान पर आधारित मिलान 302 के रूप में जाते हैं। ब्राउज़र 301 को हमेशा के लिए कैश कर लेते हैं और उसे वापस नहीं लिया जा सकता — यह विकल्प तभी चुनें जब आपको भरोसा हो कि आपकी सूची पूरी है।',
+	'seconds' => 'सेकंड',
+	'Default 3600 (1 hour). Minimum 60, maximum 604800 (7 days).' => 'डिफ़ॉल्ट 3600 (1 घंटा)। न्यूनतम 60, अधिकतम 604800 (7 दिन)।',
+	'milliseconds' => 'मिलीसेकंड',
+	'If no404 does not answer within this time the request is dropped and your site shows its own 404 page. Visitors are never left waiting.' => 'यदि no404 इस समय में जवाब नहीं देता तो अनुरोध छोड़ दिया जाता है और आपकी साइट अपना ही 404 पृष्ठ दिखाती है। आगंतुकों को कभी इंतज़ार नहीं करना पड़ता।',
+	'One path prefix per line. URLs starting with these prefixes are never sent to no404. Static files (.css, .js, .png …) and paths such as /wp-admin and /wp-json are excluded automatically.' => 'हर पंक्ति में एक पथ उपसर्ग। इन उपसर्गों से शुरू होने वाले URL कभी no404 को नहीं भेजे जाते। स्थिर फ़ाइलें (.css, .js, .png …) और /wp-admin तथा /wp-json जैसे पथ अपने आप छोड़ दिए जाते हैं।',
+	'Testing…' => 'जाँच हो रही है…',
+	'The test could not be completed. Reload the page and try again.' => 'जाँच पूरी नहीं हो सकी। पृष्ठ फिर से लोड करें और दोबारा कोशिश करें।',
+	'The plugin is not running yet: no API key has been entered.' => 'प्लगइन अभी चल नहीं रहा: कोई API कुंजी दर्ज नहीं की गई है।',
+	'Redirecting is switched off. 404 pages are shown as they are.' => 'रीडायरेक्ट बंद है। 404 पृष्ठ जैसे हैं वैसे ही दिखाए जा रहे हैं।',
+	'Active. Pages that are not found are redirected server-side.' => 'सक्रिय। न मिलने वाले पृष्ठ सर्वर पर ही रीडायरेक्ट किए जाते हैं।',
+	'Connection test' => 'कनेक्शन जाँच',
+	'Sends a real request to no404 using your saved settings. Save your changes first.' => 'आपकी सहेजी गई सेटिंग्स से no404 को एक असली अनुरोध भेजता है। पहले अपने बदलाव सहेजें।',
+	'Path to test' => 'जाँचने के लिए पथ',
+	'Test the connection' => 'कनेक्शन जाँचें',
+	'You do not have permission to do this.' => 'आपके पास ऐसा करने की अनुमति नहीं है।',
+	'The client could not be initialised.' => 'क्लाइंट शुरू नहीं किया जा सका।',
+	'Connection succeeded. Suggested target for this path: %1$s (source: %2$s, score: %3$s).' => 'कनेक्शन सफल रहा। इस पथ के लिए सुझाया गया लक्ष्य: %1$s (स्रोत: %2$s, स्कोर: %3$s)।',
+	'Connection succeeded. Your API key is valid; no match was found for this test path, which is what we expect.' => 'कनेक्शन सफल रहा। आपकी API कुंजी वैध है; इस परीक्षण पथ के लिए कोई मिलान नहीं मिला — यही अपेक्षित है।',
+	'No API key has been entered. Save your key and try again.' => 'कोई API कुंजी दर्ज नहीं की गई है। अपनी कुंजी सहेजें और दोबारा कोशिश करें।',
+	'The no404 address is empty.' => 'no404 पता खाली है।',
+	'Invalid API key (404). Copy the key from the site settings page in your no404 dashboard; if you rotated the key recently, enter the new one here as well.' => 'अमान्य API कुंजी (404)। कुंजी को no404 डैशबोर्ड के साइट सेटिंग्स पृष्ठ से कॉपी करें; यदि आपने हाल ही में कुंजी बदली है तो नई कुंजी यहाँ भी दर्ज करें।',
+	'Access denied (403): %s. Your subscription may be inactive, monitoring for this site may be paused, or your account may be suspended.' => 'पहुँच अस्वीकृत (403): %s। हो सकता है आपकी सदस्यता निष्क्रिय हो, इस साइट की निगरानी रोकी गई हो, या आपका खाता निलंबित हो।',
+	'Access denied (403). Your subscription may be inactive, monitoring for this site may be paused, or your account may be suspended.' => 'पहुँच अस्वीकृत (403)। हो सकता है आपकी सदस्यता निष्क्रिय हो, इस साइट की निगरानी रोकी गई हो, या आपका खाता निलंबित हो।',
+	'Rate limit exceeded, or your monthly event quota is used up (429). Check your quota in the no404 dashboard; if you sent many requests in a short time, try again in a minute.' => 'अनुरोध सीमा पार हो गई, या आपका मासिक इवेंट कोटा खत्म हो गया (429)। no404 डैशबोर्ड में अपना कोटा देखें; यदि आपने कम समय में बहुत सारे अनुरोध भेजे हैं तो एक मिनट बाद दोबारा कोशिश करें।',
+	'The test path is invalid (422). Enter a path that starts with "/".' => 'परीक्षण पथ अमान्य है (422)। ऐसा पथ दर्ज करें जो "/" से शुरू होता हो।',
+	'Could not reach the no404 server: %s. Make sure your server is allowed to make outbound HTTPS requests.' => 'no404 सर्वर तक नहीं पहुँचा जा सका: %s। सुनिश्चित करें कि आपके सर्वर को बाहर की ओर HTTPS अनुरोध भेजने की अनुमति है।',
+	'Could not reach the no404 server. Make sure your server is allowed to make outbound HTTPS requests.' => 'no404 सर्वर तक नहीं पहुँचा जा सका। सुनिश्चित करें कि आपके सर्वर को बाहर की ओर HTTPS अनुरोध भेजने की अनुमति है।',
+	'no404 hit a temporary error (5xx). Your site is unaffected; try again shortly.' => 'no404 में एक अस्थायी त्रुटि आई (5xx)। इससे आपकी साइट पर कोई असर नहीं पड़ता; थोड़ी देर में दोबारा कोशिश करें।',
+	'Unexpected response (HTTP %d).' => 'अप्रत्याशित प्रतिक्रिया (HTTP %d)।',
+	'The no404 address must be a valid http(s) URL. The previous value has been kept. Leave the field empty to restore the default.' => 'no404 पता एक वैध http(s) URL होना चाहिए। पिछला मान बनाए रखा गया है। डिफ़ॉल्ट पर लौटने के लिए यह जगह खाली छोड़ दें।',
+);

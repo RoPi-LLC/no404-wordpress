@@ -1,0 +1,216 @@
+# Copyright (C) 2026 no404
+# This file is distributed under the GPL-2.0-or-later license.
+# ÜRETİLMİŞ DOSYA — elle düzenlemeyin, `php bin/i18n.php` çalıştırın.
+msgid ""
+msgstr ""
+"Project-Id-Version: no404 - Auto 404 Redirect 1.0.0\n"
+"Report-Msgid-Bugs-To: https://no404.tr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-09-08 01:18+0000\n"
+"PO-Revision-Date: 2026-09-08 01:18+0000\n"
+"Language: es_ES\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Domain: no404-auto-404-redirect\n"
+
+#: class-no404-admin.php:41
+msgid "Settings"
+msgstr "Ajustes"
+
+#: class-no404-admin.php:50 class-no404-admin.php:274
+msgid "no404 – Auto 404 Redirect"
+msgstr "no404 – Redirección automática de 404"
+
+#: class-no404-admin.php:51
+msgid "no404"
+msgstr "no404"
+
+#: class-no404-admin.php:72
+msgid "Connection"
+msgstr "Conexión"
+
+#: class-no404-admin.php:79
+msgid "Behaviour"
+msgstr "Comportamiento"
+
+#: class-no404-admin.php:85
+msgid "no404 address"
+msgstr "Dirección de no404"
+
+#: class-no404-admin.php:86
+msgid "API key"
+msgstr "Clave de API"
+
+#: class-no404-admin.php:87
+msgid "Redirecting"
+msgstr "Redirección"
+
+#: class-no404-admin.php:88
+msgid "Permanent redirects"
+msgstr "Redirecciones permanentes"
+
+#: class-no404-admin.php:89
+msgid "Cache lifetime"
+msgstr "Duración de la caché"
+
+#: class-no404-admin.php:90
+msgid "Timeout"
+msgstr "Tiempo de espera"
+
+#: class-no404-admin.php:91
+msgid "Excluded paths"
+msgstr "Rutas excluidas"
+
+#: class-no404-admin.php:108
+msgid "Get your API key from the site settings page in your no404 dashboard. The key is used server-side only and never appears in your site's source code."
+msgstr "Consigue tu clave de API en la página de ajustes del sitio de tu escritorio de no404. La clave se usa solo en el servidor y nunca aparece en el código fuente de tu sitio."
+
+#: class-no404-admin.php:116
+msgid "Caching stops bots that hit the same dead URL over and over from burning through your monthly event quota. A shorter lifetime means higher quota usage."
+msgstr "La caché evita que los bots que piden una y otra vez la misma URL muerta agoten tu cuota mensual de eventos. Cuanto menor sea la duración, mayor será el consumo de cuota."
+
+#: class-no404-admin.php:146
+msgid "You should not need to touch this — the default, %s, is the right address. Change it only if you host no404 on your own server. Leave the field empty to restore the default."
+msgstr "No deberías necesitar tocar esto: el valor por defecto, %s, es la dirección correcta. Cámbialo solo si alojas no404 en tu propio servidor. Deja el campo vacío para restaurar el valor por defecto."
+
+#: class-no404-admin.php:158
+msgid "Paste your key"
+msgstr "Pega tu clave"
+
+#: class-no404-admin.php:164
+msgid "Saved key: %s — leave this field empty to keep it."
+msgstr "Clave guardada: %s. Deja este campo vacío para conservarla."
+
+#: class-no404-admin.php:180
+msgid "Apply no404 redirects on pages that are not found"
+msgstr "Aplicar las redirecciones de no404 en las páginas no encontradas"
+
+#: class-no404-admin.php:181
+msgid "Send every match as a 301 (permanent)"
+msgstr "Enviar todas las coincidencias como 301 (permanente)"
+
+#: class-no404-admin.php:185
+msgid "By default only manually defined redirects and high-scoring matches are sent as 301; speculative matches are sent as 302. A 301 is cached permanently by browsers and cannot be taken back — tick this box only if you are confident your catalogue is complete."
+msgstr "Por defecto solo se envían como 301 las redirecciones definidas manualmente y las coincidencias con puntuación alta; las coincidencias dudosas se envían como 302. Los navegadores guardan una 301 en caché de forma permanente y no se puede deshacer: marca esta casilla solo si tienes la certeza de que tu catálogo está completo."
+
+#: class-no404-admin.php:198
+msgid "seconds"
+msgstr "segundos"
+
+#: class-no404-admin.php:200
+msgid "Default 3600 (1 hour). Minimum 60, maximum 604800 (7 days)."
+msgstr "Por defecto 3600 (1 hora). Mínimo 60, máximo 604800 (7 días)."
+
+#: class-no404-admin.php:209
+msgid "milliseconds"
+msgstr "milisegundos"
+
+#: class-no404-admin.php:211
+msgid "If no404 does not answer within this time the request is dropped and your site shows its own 404 page. Visitors are never left waiting."
+msgstr "Si no404 no responde en ese tiempo, la petición se descarta y tu sitio muestra su propia página 404. Los visitantes nunca se quedan esperando."
+
+#: class-no404-admin.php:224
+msgid "One path prefix per line. URLs starting with these prefixes are never sent to no404. Static files (.css, .js, .png …) and paths such as /wp-admin and /wp-json are excluded automatically."
+msgstr "Un prefijo de ruta por línea. Las URL que empiecen por estos prefijos nunca se envían a no404. Los archivos estáticos (.css, .js, .png …) y rutas como /wp-admin y /wp-json se excluyen automáticamente."
+
+#: class-no404-admin.php:258
+msgid "Testing…"
+msgstr "Probando…"
+
+#: class-no404-admin.php:259
+msgid "The test could not be completed. Reload the page and try again."
+msgstr "No se ha podido completar la prueba. Recarga la página e inténtalo de nuevo."
+
+#: class-no404-admin.php:278
+msgid "The plugin is not running yet: no API key has been entered."
+msgstr "El plugin todavía no está funcionando: no se ha introducido ninguna clave de API."
+
+#: class-no404-admin.php:282
+msgid "Redirecting is switched off. 404 pages are shown as they are."
+msgstr "La redirección está desactivada. Las páginas 404 se muestran tal cual."
+
+#: class-no404-admin.php:286
+msgid "Active. Pages that are not found are redirected server-side."
+msgstr "Activo. Las páginas no encontradas se redirigen en el servidor."
+
+#: class-no404-admin.php:300
+msgid "Connection test"
+msgstr "Prueba de conexión"
+
+#: class-no404-admin.php:302
+msgid "Sends a real request to no404 using your saved settings. Save your changes first."
+msgstr "Envía una petición real a no404 con tus ajustes guardados. Guarda antes tus cambios."
+
+#: class-no404-admin.php:308
+msgid "Path to test"
+msgstr "Ruta que probar"
+
+#: class-no404-admin.php:313
+msgid "Test the connection"
+msgstr "Probar la conexión"
+
+#: class-no404-admin.php:330
+msgid "You do not have permission to do this."
+msgstr "No tienes permisos para hacer esto."
+
+#: class-no404-admin.php:340
+msgid "The client could not be initialised."
+msgstr "No se ha podido inicializar el cliente."
+
+#: class-no404-admin.php:371
+msgid "Connection succeeded. Suggested target for this path: %1$s (source: %2$s, score: %3$s)."
+msgstr "Conexión correcta. Destino sugerido para esta ruta: %1$s (origen: %2$s, puntuación: %3$s)."
+
+#: class-no404-admin.php:378
+msgid "Connection succeeded. Your API key is valid; no match was found for this test path, which is what we expect."
+msgstr "Conexión correcta. Tu clave de API es válida; no se ha encontrado ninguna coincidencia para esta ruta de prueba, que es justo lo esperado."
+
+#: class-no404-admin.php:381
+msgid "No API key has been entered. Save your key and try again."
+msgstr "No se ha introducido ninguna clave de API. Guarda tu clave e inténtalo de nuevo."
+
+#: class-no404-admin.php:384
+msgid "The no404 address is empty."
+msgstr "La dirección de no404 está vacía."
+
+#: class-no404-admin.php:387
+msgid "Invalid API key (404). Copy the key from the site settings page in your no404 dashboard; if you rotated the key recently, enter the new one here as well."
+msgstr "Clave de API no válida (404). Copia la clave desde la página de ajustes del sitio de tu escritorio de no404; si la has renovado hace poco, introduce aquí también la nueva."
+
+#: class-no404-admin.php:393
+msgid "Access denied (403): %s. Your subscription may be inactive, monitoring for this site may be paused, or your account may be suspended."
+msgstr "Acceso denegado (403): %s. Puede que tu suscripción esté inactiva, que la monitorización de este sitio esté en pausa o que tu cuenta esté suspendida."
+
+#: class-no404-admin.php:396
+msgid "Access denied (403). Your subscription may be inactive, monitoring for this site may be paused, or your account may be suspended."
+msgstr "Acceso denegado (403). Puede que tu suscripción esté inactiva, que la monitorización de este sitio esté en pausa o que tu cuenta esté suspendida."
+
+#: class-no404-admin.php:399
+msgid "Rate limit exceeded, or your monthly event quota is used up (429). Check your quota in the no404 dashboard; if you sent many requests in a short time, try again in a minute."
+msgstr "Se ha superado el límite de peticiones o se ha agotado tu cuota mensual de eventos (429). Revisa tu cuota en el escritorio de no404; si has enviado muchas peticiones en poco tiempo, inténtalo de nuevo dentro de un minuto."
+
+#: class-no404-admin.php:402
+msgid "The test path is invalid (422). Enter a path that starts with \"/\"."
+msgstr "La ruta de prueba no es válida (422). Introduce una ruta que empiece por «/»."
+
+#: class-no404-admin.php:408
+msgid "Could not reach the no404 server: %s. Make sure your server is allowed to make outbound HTTPS requests."
+msgstr "No se ha podido contactar con el servidor de no404: %s. Asegúrate de que tu servidor tiene permiso para hacer peticiones HTTPS salientes."
+
+#: class-no404-admin.php:411
+msgid "Could not reach the no404 server. Make sure your server is allowed to make outbound HTTPS requests."
+msgstr "No se ha podido contactar con el servidor de no404. Asegúrate de que tu servidor tiene permiso para hacer peticiones HTTPS salientes."
+
+#: class-no404-admin.php:414
+msgid "no404 hit a temporary error (5xx). Your site is unaffected; try again shortly."
+msgstr "no404 ha tenido un error temporal (5xx). Tu sitio no se ve afectado; vuelve a intentarlo en un momento."
+
+#: class-no404-admin.php:419
+msgid "Unexpected response (HTTP %d)."
+msgstr "Respuesta inesperada (HTTP %d)."
+
+#: class-no404-options.php:143
+msgid "The no404 address must be a valid http(s) URL. The previous value has been kept. Leave the field empty to restore the default."
+msgstr "La dirección de no404 debe ser una URL http(s) válida. Se ha conservado el valor anterior. Deja el campo vacío para restaurar el valor por defecto."
+

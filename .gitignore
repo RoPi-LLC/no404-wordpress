@@ -1,0 +1,25 @@
+# Paket çıktısı
+dist/
+
+# ── DAHİLİ BELGELER — ASLA YAYIMLANMAZ ──
+# Bu depo herkese açıktır (WordPress.org + GitHub). Başvuru notları, hesap
+# bilgileri, test kimlik bilgileri ve iç strateji buraya konur ve commit EDİLMEZ.
+# Yeni bir dahili not yazarken README.md'ye değil, buraya koyun.
+_internal/
+# Emniyet agi: bu belge kok dizine kopyalanirsa da commit EDILMESIN.
+# (Kisisel e-posta ve basvuru notlari icerir.)
+WORDPRESS-ORG-SUBMISSION.md
+
+# Kimlik bilgisi taşıyabilecek dosyalar
+*.local
+*.local.*
+.env
+.env.*
+credentials.json
+
+# Ortam artıkları
+node_modules/
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
