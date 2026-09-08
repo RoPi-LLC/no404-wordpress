@@ -1,6 +1,6 @@
 <?php
 /**
- * WordPress HTTP adaptörü (`wp_remote_get`).
+ * WordPress HTTP adapter (`wp_remote_get`).
  *
  * @package no404
  */
@@ -12,8 +12,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 class No404_WP_Http implements No404_Http_Interface {
 
 	/**
-	 * @param string $url        Tam URL.
-	 * @param int    $timeout_ms Zaman aşımı (ms).
+	 * @param string $url        Full URL.
+	 * @param int    $timeout_ms Timeout in milliseconds.
 	 * @param string $user_agent User-Agent.
 	 *
 	 * @return array ok/status/body/error
@@ -22,9 +22,9 @@ class No404_WP_Http implements No404_Http_Interface {
 		$response = wp_remote_get(
 			$url,
 			array(
-				// wp_remote_get saniye bekler; ondalık değer cURL'de ms'e çevrilir.
+				// wp_remote_get expects seconds; a fractional value becomes milliseconds in cURL.
 				'timeout'     => max( 0.2, $timeout_ms / 1000 ),
-				'redirection' => 0, // API yönlendirmez; zincir izlemeye gerek yok.
+				'redirection' => 0, // The API never redirects; there is no chain to follow.
 				'sslverify'   => true,
 				'user-agent'  => $user_agent,
 				'headers'     => array( 'Accept' => 'application/json' ),

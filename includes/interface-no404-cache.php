@@ -1,9 +1,10 @@
 <?php
 /**
- * Önbellek katmanı arayüzü.
+ * Cache interface.
  *
- * Kota koruması bu katmana bağlıdır: aynı ölü URL'yi günde 200 kez çeken bir
- * bot 200 değil 1 olay harcamalı. Bu yüzden NEGATİF sonuçlar da cache'lenir.
+ * Quota protection depends on this layer: a bot pulling the same dead URL 200
+ * times a day must cost one event, not 200. That is why NEGATIVE results are
+ * cached as well.
  *
  * @package no404
  */
@@ -15,21 +16,21 @@ if ( ! defined( 'ABSPATH' ) ) {
 interface No404_Cache_Interface {
 
 	/**
-	 * @param string $key Anahtar (ham; uygulama kendi öneki/hash'ini ekler).
-	 * @return mixed|null Kayıt yoksa veya süresi dolduysa null.
+	 * @param string $key Key (raw; the implementation adds its own prefix/hash).
+	 * @return mixed|null Null when the entry is missing or expired.
 	 */
 	public function get( $key );
 
 	/**
-	 * @param string $key   Anahtar.
-	 * @param mixed  $value Serileştirilebilir değer.
-	 * @param int    $ttl   Saniye.
+	 * @param string $key   Key.
+	 * @param mixed  $value Serialisable value.
+	 * @param int    $ttl   Seconds.
 	 * @return void
 	 */
 	public function set( $key, $value, $ttl );
 
 	/**
-	 * Bu eklentiye ait tüm kayıtları siler (ayar değişince çağrılır).
+	 * Deletes every entry belonging to this plugin (called when settings change).
 	 *
 	 * @return void
 	 */

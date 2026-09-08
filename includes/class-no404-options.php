@@ -1,10 +1,10 @@
 <?php
 /**
- * Ayar deposu: varsayılanlar, temizleme (sanitize) ve maskeleme.
+ * Option store: defaults, sanitising and masking.
  *
- * Tek bir option satırında (`no404_settings`) dizi olarak tutulur. Multisite'ta
- * `get_option` blog bağlamına göre çalıştığı için her mağaza kendi anahtarını
- * kendiliğinden kullanır.
+ * Everything lives as an array in a single option row (`no404_settings`).
+ * Because `get_option` works in the blog context, on multisite each store uses
+ * its own key automatically.
  *
  * @package no404
  */
@@ -17,19 +17,19 @@ class No404_Options {
 
 	const OPTION = 'no404_settings';
 
-	/** Maskeli anahtar gösterilirken kullanılan yer tutucu. */
+	/** Placeholder used when showing the key masked. */
 	const MASK = '••••••••';
 
 	/**
-	 * no404 servisinin adresi.
+	 * Address of the no404 service.
 	 *
-	 * Kullanıcıların büyük çoğunluğu bu alana hiç dokunmaz; yalnızca kendi
-	 * kurulumunu barındıranlar değiştirir. Alan boş bırakılırsa buraya döner.
+	 * The vast majority of users never touch this field; only people hosting
+	 * their own installation change it. Leaving the field empty restores this.
 	 */
 	const DEFAULT_API_BASE = 'https://no404.tr';
 
 	/**
-	 * @return array Varsayılan ayarlar.
+	 * @return array Default settings.
 	 */
 	public static function defaults() {
 		return array(
@@ -44,7 +44,7 @@ class No404_Options {
 	}
 
 	/**
-	 * @return array Kaydedilmiş ayarlar, varsayılanlarla birleştirilmiş.
+	 * @return array Stored settings, merged over the defaults.
 	 */
 	public static function all() {
 		$saved = get_option( self::OPTION, array() );
@@ -56,8 +56,8 @@ class No404_Options {
 	}
 
 	/**
-	 * @param string $key     Ayar adı.
-	 * @param mixed  $default Bulunamazsa dönecek değer.
+	 * @param string $key     Setting name.
+	 * @param mixed  $default Value returned when the setting is missing.
 	 * @return mixed
 	 */
 	public static function get( $key, $default = null ) {
@@ -67,7 +67,7 @@ class No404_Options {
 	}
 
 	/**
-	 * "Excluded paths" metnini önek dizisine çevirir.
+	 * Turns the "Excluded paths" text into an array of prefixes.
 	 *
 	 * @return string[]
 	 */
@@ -95,7 +95,7 @@ class No404_Options {
 	}
 
 	/**
-	 * API anahtarının maskeli hâli — ekranda tam anahtar ASLA gösterilmez.
+	 * The masked form of the API key — the full key is NEVER shown on screen.
 	 *
 	 * @return string
 	 */
@@ -109,9 +109,9 @@ class No404_Options {
 	}
 
 	/**
-	 * Settings API kaydından gelen ham girdiyi temizler.
+	 * Sanitises the raw input coming from a Settings API save.
 	 *
-	 * @param mixed $input Ham POST verisi.
+	 * @param mixed $input Raw POST data.
 	 * @return array
 	 */
 	public static function sanitize( $input ) {
@@ -126,9 +126,9 @@ class No404_Options {
 		$clean['enabled']   = empty( $input['enabled'] ) ? 0 : 1;
 		$clean['force_301'] = empty( $input['force_301'] ) ? 0 : 1;
 
-		// API kökü. Alan BOŞ bırakılırsa varsayılana döner — kullanıcının
-		// "yanlış bir şey yazdım, geri alayım" yolu budur. Dolu ama geçersizse
-		// eski değer korunur ve uyarı gösterilir.
+		// API base. An EMPTY field restores the default — this is the user's
+		// "I typed something wrong, let me undo it" route. A non-empty but invalid
+		// value keeps the previous one and shows a warning.
 		$raw_base = isset( $input['api_base'] ) ? trim( (string) $input['api_base'] ) : '';
 
 		if ( '' === $raw_base ) {
@@ -147,7 +147,7 @@ class No404_Options {
 
 		$clean['api_base'] = rtrim( $api_base, '/' );
 
-		// API anahtarı: alan boş veya maskeli gönderildiyse mevcut anahtar korunur.
+		// API key: an empty or still-masked submission keeps the stored key.
 		$api_key = isset( $input['api_key'] ) ? trim( (string) $input['api_key'] ) : '';
 		if ( '' === $api_key || false !== strpos( $api_key, self::MASK ) ) {
 			$clean['api_key'] = $current['api_key'];
@@ -167,7 +167,7 @@ class No404_Options {
 			? sanitize_textarea_field( (string) $input['exclude_paths'] )
 			: $current['exclude_paths'];
 
-		// Ayar değişti → eski sonuçlar geçersiz (özellikle anahtar/eşik değişiminde).
+		// Settings changed → previous results are stale (especially on a key change).
 		$cache = new No404_WP_Cache();
 		$cache->flush();
 

@@ -1,7 +1,7 @@
 /**
- * no404 — ayar ekranı bağlantı testi.
+ * no404 — settings screen connection test.
  *
- * Bağımlılık yok; WordPress'in jQuery sürümünden bağımsız çalışır.
+ * No dependencies; works regardless of which jQuery version WordPress ships.
  */
 ( function () {
 	'use strict';
@@ -16,13 +16,13 @@
 		}
 
 		function show( type, message ) {
-			output.textContent = ''; // Önceki sonucu temizle (HTML ayrıştırma yok).
+			output.textContent = ''; // Clear the previous result (no HTML parsing).
 
 			var notice = document.createElement( 'div' );
 			notice.className = 'notice notice-' + type + ' inline';
 
 			var paragraph = document.createElement( 'p' );
-			// textContent: sunucudan gelen mesaj asla HTML olarak yorumlanmaz.
+			// textContent: a message from the server is never interpreted as HTML.
 			paragraph.textContent = message;
 
 			notice.appendChild( paragraph );

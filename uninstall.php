@@ -1,9 +1,10 @@
 <?php
 /**
- * Kaldırma temizliği: ayarlar ve önbellek kayıtları silinir.
+ * Uninstall cleanup: removes the settings and the cache entries.
  *
- * Transient'lar `_transient_no404_%` ve `_transient_timeout_no404_%` olmak üzere
- * İKİ satır olarak durur; ikisi de silinmezse veritabanında yetim satır kalır.
+ * A transient is stored as TWO rows — `_transient_no404_%` and
+ * `_transient_timeout_no404_%`. Delete only one of them and orphaned rows are
+ * left behind in the database.
  *
  * @package no404
  */
@@ -13,7 +14,7 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 }
 
 /**
- * Tek bir sitenin verilerini siler.
+ * Deletes the data of a single site.
  *
  * @return void
  */
@@ -23,7 +24,7 @@ function no404_uninstall_site() {
 	delete_option( 'no404_settings' );
 	delete_option( 'no404_cache_generation' );
 
-	// Transient satırları (harici nesne önbelleği varsa zaten DB'de yoktur).
+	// Transient rows (with an external object cache these are not in the DB anyway).
 	$like = $wpdb->esc_like( '_transient_no404_' ) . '%';
 	$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s", $like ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
 

@@ -1,10 +1,11 @@
 <?php
 /**
- * HTTP taşıma katmanı arayüzü.
+ * HTTP transport interface.
  *
- * Çekirdek (No404_Client) taşıma katmanını bilmez; WordPress adaptörü
- * `wp_remote_get` kullanır, testler sahte bir uygulama geçirir. Sınıfın
- * WordPress'siz test edilebilmesini sağlayan sınır budur.
+ * The core (No404_Client) knows nothing about the transport layer: the
+ * WordPress adapter uses `wp_remote_get`, and the tests pass in a fake
+ * implementation. This is the boundary that keeps the core testable without
+ * WordPress.
  *
  * @package no404
  */
@@ -16,15 +17,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 interface No404_Http_Interface {
 
 	/**
-	 * Bir GET isteği yapar. ASLA exception fırlatmaz — hatalar dönüş dizisinde.
+	 * Performs a GET request. NEVER throws — failures come back in the array.
 	 *
-	 * @param string $url        Tam URL.
-	 * @param int    $timeout_ms Zaman aşımı (milisaniye).
-	 * @param string $user_agent Gönderilecek User-Agent.
+	 * @param string $url        Full URL.
+	 * @param int    $timeout_ms Timeout in milliseconds.
+	 * @param string $user_agent User-Agent to send.
 	 *
 	 * @return array{ok:bool,status:int,body:string,error:string}
-	 *               ok=false → taşıma hatası (DNS, timeout, TLS). status 0 olur.
-	 *               ok=true  → HTTP yanıtı alındı; status 4xx/5xx olabilir.
+	 *               ok=false → transport failure (DNS, timeout, TLS); status is 0.
+	 *               ok=true  → an HTTP response arrived; status may be 4xx/5xx.
 	 */
 	public function get( $url, $timeout_ms, $user_agent );
 }

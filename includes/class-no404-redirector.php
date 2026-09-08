@@ -1,12 +1,12 @@
 <?php
 /**
- * 404 yakalayıcı: `template_redirect` üzerinde çalışır, sunucu tarafında
- * gerçek bir 301/302 üretir.
+ * The 404 catcher: runs on `template_redirect` and issues a real, server-side
+ * 301/302.
  *
- * ÖNCELİK: {@see No404_Redirector::PRIORITY} kasıtlı olarak yüksektir. Yoast,
- * Rank Math ve Redirection gibi eklentilerin kendi yönlendirme tabloları vardır
- * ve ONLAR ÖNCE ÇALIŞMALI. no404 son çaredir; onlar bir eşleşme bulup
- * yönlendirdiyse buraya hiç gelinmez.
+ * PRIORITY: {@see No404_Redirector::PRIORITY} is deliberately high. Plugins such
+ * as Yoast, Rank Math and Redirection maintain their own redirect tables and
+ * THEY MUST RUN FIRST. no404 is the last resort; if one of them found a match
+ * and redirected, this code is never reached.
  *
  * @package no404
  */
@@ -17,33 +17,33 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class No404_Redirector {
 
-	/** `template_redirect` önceliği — diğer yönlendirme eklentilerinden SONRA. */
+	/** `template_redirect` priority — AFTER every other redirect plugin. */
 	const PRIORITY = 9999;
 
 	/** @var No404_Client */
 	protected $client;
 
-	/** @var string[] Bu istek için geçerli izinli host'lar. */
+	/** @var string[] Hosts allowed as a redirect target for this request. */
 	protected $allowed_hosts = array();
 
 	/**
-	 * @param No404_Client $client Çekirdek istemci.
-	 * @param string[]     $allowed_hosts İzinli yönlendirme host'ları.
+	 * @param No404_Client $client        Core client.
+	 * @param string[]     $allowed_hosts Allowed redirect hosts.
 	 */
 	public function __construct( No404_Client $client, array $allowed_hosts ) {
 		$this->client        = $client;
 		$this->allowed_hosts = $allowed_hosts;
 	}
 
-	/** Kancayı bağlar. */
+	/** Registers the hook. */
 	public function register() {
 		add_action( 'template_redirect', array( $this, 'maybe_redirect' ), self::PRIORITY );
 	}
 
 	/**
-	 * 404 ise no404'e sorar ve uygun hedefe yönlendirir.
+	 * On a 404, asks no404 and redirects to the suggested target.
 	 *
-	 * FAIL-OPEN: her koşulda sessizce geri döner; sayfa normal render edilir.
+	 * FAIL-OPEN: returns quietly in every failure case, so the page renders as usual.
 	 *
 	 * @return void
 	 */
@@ -58,10 +58,10 @@ class No404_Redirector {
 		}
 
 		/**
-		 * Bu isteği no404'e sormadan atlamak için filtre.
+		 * Filter to skip this request without asking no404 at all.
 		 *
-		 * @param bool   $skip Atlansın mı.
-		 * @param string $path Normalize edilmiş yol.
+		 * @param bool   $skip Whether to skip.
+		 * @param string $path The normalised path.
 		 */
 		if ( apply_filters( 'no404_skip_request', false, $path ) ) {
 			return;
@@ -80,7 +80,7 @@ class No404_Redirector {
 		$status = $this->client->decide_status( $result );
 
 		/**
-		 * Yönlendirme hedefini ve durum kodunu son kez değiştirme imkânı.
+		 * Last chance to change the redirect target and status code.
 		 *
 		 * @param string $target Hedef URL.
 		 * @param int    $status 301 veya 302.
@@ -94,13 +94,14 @@ class No404_Redirector {
 			return;
 		}
 
-		// WordPress'in kendi allowlist'i: harici host'lara kaçışı engeller.
-		// Kendi izinli host'larımızı yalnızca bu çağrı boyunca ekliyoruz; filtre
-		// hem ön doğrulama hem wp_safe_redirect'in kendi doğrulaması boyunca açık
-		// kalmalı, yoksa safe_redirect kendi hedefimizi harici sayıp düşürür.
+		// WordPress's own allow-list stops an escape to an external host. We add our
+		// own allowed hosts for the duration of this call only. The filter must stay
+		// in place across BOTH the pre-validation and wp_safe_redirect's own check —
+		// remove it too early and safe_redirect treats our valid target as external
+		// and drops it.
 		add_filter( 'allowed_redirect_hosts', array( $this, 'filter_allowed_hosts' ) );
 		$validated = wp_validate_redirect( $target, '' );
-		// Zincir yok: tek yönlendirme, sonra çıkış.
+		// No chains: a single redirect, then exit.
 		$sent = ( '' !== $validated ) ? wp_safe_redirect( $validated, $status, 'no404' ) : false;
 		remove_filter( 'allowed_redirect_hosts', array( $this, 'filter_allowed_hosts' ) );
 
@@ -110,9 +111,9 @@ class No404_Redirector {
 	}
 
 	/**
-	 * `allowed_redirect_hosts` filtresi.
+	 * The `allowed_redirect_hosts` filter.
 	 *
-	 * @param string[] $hosts Mevcut izinli host'lar.
+	 * @param string[] $hosts Currently allowed hosts.
 	 * @return string[]
 	 */
 	public function filter_allowed_hosts( $hosts ) {
@@ -124,7 +125,7 @@ class No404_Redirector {
 	}
 
 	/**
-	 * Bu istek işlenmeli mi?
+	 * Should this request be handled?
 	 *
 	 * @return bool
 	 */
@@ -133,10 +134,10 @@ class No404_Redirector {
 			return false;
 		}
 		if ( headers_sent() ) {
-			return false; // Yönlendirme yapılamaz; sayfayı bozmayalım.
+			return false; // Cannot redirect any more; do not break the page.
 		}
 
-		// Yalnızca gerçek sayfa görüntülemeleri.
+		// Real page views only.
 		$method = isset( $_SERVER['REQUEST_METHOD'] ) ? strtoupper( sanitize_text_field( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) ) : 'GET';
 		if ( 'GET' !== $method && 'HEAD' !== $method ) {
 			return false;
@@ -168,7 +169,7 @@ class No404_Redirector {
 	}
 
 	/**
-	 * İstenen ham yolu döndürür.
+	 * Returns the raw requested path.
 	 *
 	 * @return string
 	 */
@@ -177,15 +178,15 @@ class No404_Redirector {
 			return '';
 		}
 
-		// Doğrulama çekirdekte (normalize_path + is_ignored_path) yapılır.
+		// Validation happens in the core (normalize_path + is_ignored_path).
 		return esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) );
 	}
 
 	/**
-	 * Ziyaretçinin geldiği adres.
+	 * Where the visitor came from.
 	 *
-	 * Sunucu tarafında `Referer` başlığı GERÇEK kaynaktır (JS snippet'inin
-	 * aksine 404 sayfasının kendisi değil), doğrudan kullanılabilir.
+	 * Server-side, the `Referer` header is the REAL origin (unlike the JS snippet,
+	 * where it would be the 404 page itself), so it can be used directly.
 	 *
 	 * @return string
 	 */

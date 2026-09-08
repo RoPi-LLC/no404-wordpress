@@ -33,10 +33,10 @@ require_once NO404_PLUGIN_DIR . 'includes/class-no404-options.php';
 require_once NO404_PLUGIN_DIR . 'includes/class-no404-redirector.php';
 
 /**
- * Eklentinin tekil (singleton) örneği.
+ * The plugin's singleton instance.
  *
- * Multisite: her `switch_to_blog` sonrası ayarlar yeniden okunmalıdır, bu yüzden
- * istemci blog kimliğine göre önbelleklenir.
+ * Multisite: settings must be re-read after every `switch_to_blog`, which is why
+ * the client is cached per blog ID.
  */
 final class No404_Plugin {
 
@@ -46,7 +46,7 @@ final class No404_Plugin {
 	/** @var No404_Client|null */
 	protected $client = null;
 
-	/** @var int|null İstemcinin oluşturulduğu blog. */
+	/** @var int|null The blog the client was built for. */
 	protected $client_blog_id = null;
 
 	/** @return No404_Plugin */
@@ -59,10 +59,10 @@ final class No404_Plugin {
 	}
 
 	/**
-	 * Kancaları bağlar.
+	 * Registers the hooks.
 	 *
-	 * Kaynak dil İngilizcedir; yerelleştirmeler `languages/` altındaki
-	 * kataloglardan ve translate.wordpress.org'dan gelir.
+	 * The source language is English; localisations come from the catalogues under
+	 * `languages/` and from translate.wordpress.org.
 	 */
 	public function boot() {
 		$this->register_translations_path();
@@ -73,14 +73,15 @@ final class No404_Plugin {
 			$admin->register();
 		}
 
-		// Ön yüz kancası `init`e ertelenir: eklenti yüklenirken `home_url()` henüz
-		// güvenilir değildir (multisite / alan adı eşleme eklentileri sonra devreye girer).
+		// The front-end hook is deferred to `init`: while plugins are loading,
+		// `home_url()` is not yet reliable (multisite and domain-mapping plugins
+		// come into play later).
 		if ( ! is_admin() ) {
 			add_action( 'init', array( $this, 'setup_frontend' ) );
 		}
 	}
 
-	/** Ön yüz yönlendiricisini bağlar (yalnızca ayarlar uygunsa). */
+	/** Wires up the front-end redirector (only when the settings allow it). */
 	public function setup_frontend() {
 		if ( ! $this->is_active() ) {
 			return;
@@ -91,25 +92,26 @@ final class No404_Plugin {
 	}
 
 	/**
-	 * Pakete gömülü çeviri klasörünü WordPress'in katalog kaydına bildirir.
+	 * Registers the bundled translations directory with WordPress's catalogue registry.
 	 *
-	 * `load_plugin_textdomain()` ÇAĞIRMIYORUZ: WordPress 4.6'dan beri çeviriler
-	 * ilk `__()` çağrısında kendiliğinden yüklenir ve o fonksiyonu çağırmak
-	 * WordPress.org Plugin Check tarafından uyarı sayılır.
+	 * We deliberately do NOT call `load_plugin_textdomain()`: since WordPress 4.6
+	 * translations load by themselves on the first `__()` call, and calling that
+	 * function is flagged as a warning by the WordPress.org Plugin Check.
 	 *
-	 * Ama kendiliğinden yükleme yalnızca `WP_LANG_DIR/plugins/` altına bakar —
-	 * yani translate.wordpress.org'dan İNEN çevirilere. Eklentinin KENDİ
-	 * `languages/` klasörü o listede yoktur (bkz. WP_Textdomain_Registry::
-	 * get_paths_for_domain), çünkü oraya yalnızca load_plugin_textdomain()
-	 * yol ekler. Sonuç: çağrıyı silip başka bir şey yapmazsak paketle gelen
-	 * .mo dosyaları HİÇ yüklenmez ve eklenti her dilde İngilizce görünür.
+	 * But automatic loading only looks under `WP_LANG_DIR/plugins/` — that is, at
+	 * translations DOWNLOADED from translate.wordpress.org. The plugin's OWN
+	 * `languages/` folder is not on that list (see
+	 * WP_Textdomain_Registry::get_paths_for_domain), because the only thing that
+	 * adds a path there is load_plugin_textdomain(). The consequence: if we simply
+	 * dropped the call and did nothing else, the bundled .mo files would NEVER be
+	 * loaded and the plugin would appear in English in every language.
 	 *
-	 * Bu yüzden yolu kayda doğrudan bildiriyoruz. Kayıt önce
-	 * `WP_LANG_DIR/plugins/` bakar, sonra buraya düşer; yani wp.org'dan inen
-	 * daha yeni çeviri her zaman paketteki kopyayı EZER — istediğimiz sıra bu.
+	 * So we register the path directly. The registry checks `WP_LANG_DIR/plugins/`
+	 * first and falls through to ours, which means a newer translation downloaded
+	 * from wp.org always OVERRIDES the bundled copy — exactly the order we want.
 	 *
-	 * `WP_Textdomain_Registry` WordPress 6.1 ile geldi; yoksa sessizce geçilir
-	 * ve eklenti kaynak diline (İngilizce) düşer.
+	 * `WP_Textdomain_Registry` arrived in WordPress 6.1; without it this is skipped
+	 * silently and the plugin falls back to its source language (English).
 	 */
 	private function register_translations_path() {
 		if ( ! isset( $GLOBALS['wp_textdomain_registry'] ) || ! $GLOBALS['wp_textdomain_registry'] instanceof WP_Textdomain_Registry ) {
@@ -119,7 +121,7 @@ final class No404_Plugin {
 		$GLOBALS['wp_textdomain_registry']->set_custom_path( 'no404-auto-404-redirect', NO404_PLUGIN_DIR . 'languages' );
 	}
 
-	/** @return bool Yönlendirme açık ve yapılandırılmış mı? */
+	/** @return bool Is redirecting switched on and configured? */
 	public function is_active() {
 		if ( empty( No404_Options::get( 'enabled' ) ) ) {
 			return false;
@@ -131,14 +133,14 @@ final class No404_Plugin {
 	}
 
 	/**
-	 * Yapılandırılmış çekirdek istemci.
+	 * The configured core client.
 	 *
 	 * @return No404_Client
 	 */
 	public function client() {
 		$blog_id = function_exists( 'get_current_blog_id' ) ? (int) get_current_blog_id() : 0;
 
-		// Multisite'ta mağaza değiştiyse istemciyi yeniden kur (anahtar site başına).
+		// On multisite, rebuild the client when the store changed (the key is per site).
 		if ( null !== $this->client && $this->client_blog_id === $blog_id ) {
 			return $this->client;
 		}
@@ -157,9 +159,9 @@ final class No404_Plugin {
 		);
 
 		/**
-		 * Çekirdek istemci yapılandırmasını değiştirme imkânı.
+		 * Chance to modify the core client configuration.
 		 *
-		 * @param array $config Yapılandırma.
+		 * @param array $config The configuration.
 		 */
 		$config = apply_filters( 'no404_client_config', $config );
 
@@ -170,10 +172,11 @@ final class No404_Plugin {
 	}
 
 	/**
-	 * Yönlendirme hedefinde izin verilen host'lar.
+	 * Hosts allowed as a redirect target.
 	 *
-	 * no404 hedefi sitenin kendi kök URL'sinden kurar; yine de www/non-www
-	 * farkı ve ayrı WordPress adresi (site_url) için hepsini toplarız.
+	 * no404 builds its target from the site's own root URL, but we still collect
+	 * every variant to cover the www / non-www difference and a separate WordPress
+	 * address (site_url).
 	 *
 	 * @return string[]
 	 */
@@ -187,13 +190,13 @@ final class No404_Plugin {
 			}
 			$host    = strtolower( $host );
 			$hosts[] = $host;
-			// www ↔ kök alan adı ikisi de kabul edilsin.
+			// Accept both the www and the bare domain.
 			$hosts[] = ( 0 === strpos( $host, 'www.' ) ) ? substr( $host, 4 ) : 'www.' . $host;
 		}
 
 		/**
-		 * İzinli yönlendirme host'ları. Açık yönlendirme (open redirect) koruması
-		 * buna dayanır — genişletirken dikkatli olun.
+		 * Allowed redirect hosts. Open-redirect protection depends on this list —
+		 * be careful when extending it.
 		 *
 		 * @param string[] $hosts Host listesi.
 		 */
@@ -203,7 +206,7 @@ final class No404_Plugin {
 	}
 
 	/**
-	 * Hiç sorulmayacak WordPress yolları + kullanıcının tanımladıkları.
+	 * WordPress paths that are never asked about, plus the user's own prefixes.
 	 *
 	 * @return string[]
 	 */
@@ -221,7 +224,7 @@ final class No404_Plugin {
 			'/trackback',
 		);
 
-		// Kurulum kendi içerik dizinini taşımışsa onu da ekle.
+		// If the installation moved its content directory, include that too.
 		$content = wp_parse_url( content_url( '/' ), PHP_URL_PATH );
 		if ( is_string( $content ) && '' !== $content && '/' !== $content ) {
 			$core[] = rtrim( $content, '/' );
@@ -232,7 +235,7 @@ final class No404_Plugin {
 }
 
 /**
- * Kısayol erişim fonksiyonu.
+ * Shorthand accessor.
  *
  * @return No404_Plugin
  */

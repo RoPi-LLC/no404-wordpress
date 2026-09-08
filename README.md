@@ -9,7 +9,7 @@ When you delete a product, change a permalink or migrate a site, the old URLs ke
 Most redirect plugins ask you to fix this by hand: one rule per broken URL. That does not scale past a few dozen. **no404 works the other way around** — it keeps a synchronised index of the URLs your site actually has, and when a request 404s it finds the closest match automatically. You write no rules.
 
 - **WordPress.org:** [wordpress.org/plugins/no404-auto-404-redirect](https://wordpress.org/plugins/no404-auto-404-redirect/)
-- **Latest release:** [github.com/no404app/no404-wordpress/releases/latest](https://github.com/no404app/no404-wordpress/releases/latest)
+- **Source & releases:** [github.com/RoPi-LLC/no404-wordpress](https://github.com/RoPi-LLC/no404-wordpress) · [latest release](https://github.com/RoPi-LLC/no404-wordpress/releases/latest)
 - **Service & account:** [no404.tr](https://no404.tr)
 
 ---
@@ -152,7 +152,7 @@ The plugin is **written in English** and ships with seven translations. It follo
 
 If your language is not on the list, the plugin falls back to English rather than showing untranslated placeholders. Translations for every string are complete — the build refuses to produce a package with a missing or empty entry.
 
-Want to add your language? See [CONTRIBUTING.md](CONTRIBUTING.md#çeviri).
+Want to add your language? See [CONTRIBUTING.md](CONTRIBUTING.md#translations).
 
 ---
 
@@ -218,7 +218,7 @@ Normal pages are untouched — the plugin only runs after WordPress has already 
 
 ## Development
 
-Architecture, the behaviour contract, tests, the translation workflow and packaging are documented in **[CONTRIBUTING.md](CONTRIBUTING.md)** (in Turkish — the working language of the team).
+Architecture, the behaviour contract, tests, the translation workflow and packaging are documented in **[CONTRIBUTING.md](CONTRIBUTING.md)**.
 
 ```bash
 php tests/test-core.php        # core behaviour, no WordPress needed

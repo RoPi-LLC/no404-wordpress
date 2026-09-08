@@ -1,6 +1,6 @@
 <?php
 /**
- * Yönetim ekranı: Ayarlar → no404.
+ * Admin screen: Settings → no404.
  *
  * @package no404
  */
@@ -15,7 +15,7 @@ class No404_Admin {
 	const GROUP       = 'no404_settings_group';
 	const AJAX_ACTION = 'no404_test_connection';
 
-	/** Kancaları bağlar. */
+	/** Registers the hooks. */
 	public function register() {
 		add_action( 'admin_menu', array( $this, 'add_menu' ) );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
@@ -28,9 +28,9 @@ class No404_Admin {
 	}
 
 	/**
-	 * Eklenti listesine "Settings" bağlantısı ekler.
+	 * Adds a "Settings" link to the plugins list.
 	 *
-	 * @param string[] $links Mevcut bağlantılar.
+	 * @param string[] $links Existing links.
 	 * @return string[]
 	 */
 	public function action_links( $links ) {
@@ -44,7 +44,7 @@ class No404_Admin {
 		return $links;
 	}
 
-	/** Menü kaydı. */
+	/** Menu registration. */
 	public function add_menu() {
 		add_options_page(
 			__( 'no404 – Auto 404 Redirect', 'no404-auto-404-redirect' ),
@@ -55,7 +55,7 @@ class No404_Admin {
 		);
 	}
 
-	/** Settings API kayıtları. */
+	/** Settings API registrations. */
 	public function register_settings() {
 		register_setting(
 			self::GROUP,
@@ -103,7 +103,7 @@ class No404_Admin {
 		}
 	}
 
-	/** Bağlantı bölümü açıklaması. */
+	/** Description of the Connection section. */
 	public function section_connection() {
 		echo '<p>' . esc_html__(
 			'Get your API key from the site settings page in your no404 dashboard. The key is used server-side only and never appears in your site\'s source code.',
@@ -111,7 +111,7 @@ class No404_Admin {
 		) . '</p>';
 	}
 
-	/** Davranış bölümü açıklaması. */
+	/** Description of the Behaviour section. */
 	public function section_behaviour() {
 		echo '<p>' . esc_html__(
 			'Caching stops bots that hit the same dead URL over and over from burning through your monthly event quota. A shorter lifetime means higher quota usage.',
@@ -120,9 +120,9 @@ class No404_Admin {
 	}
 
 	/**
-	 * Tek bir ayar alanını basar.
+	 * Renders a single settings field.
 	 *
-	 * @param array $args label_for ve key içerir.
+	 * @param array $args Contains label_for and key.
 	 * @return void
 	 */
 	public function render_field( $args ) {
@@ -230,9 +230,9 @@ class No404_Admin {
 	}
 
 	/**
-	 * Yönetim betiklerini yükler.
+	 * Enqueues the admin scripts.
 	 *
-	 * @param string $hook Geçerli ekran.
+	 * @param string $hook The current screen.
 	 * @return void
 	 */
 	public function enqueue( $hook ) {
@@ -261,7 +261,7 @@ class No404_Admin {
 		);
 	}
 
-	/** Ayar sayfasını basar. */
+	/** Renders the settings page. */
 	public function render() {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
@@ -319,7 +319,7 @@ class No404_Admin {
 	}
 
 	/**
-	 * AJAX: bağlantı testi.
+	 * AJAX: the connection test.
 	 *
 	 * @return void
 	 */
@@ -352,12 +352,12 @@ class No404_Admin {
 	}
 
 	/**
-	 * Ping sonucunu kullanıcıya okunur mesaja çevirir.
+	 * Turns a ping result into a message a human can read.
 	 *
-	 * Kullanıcı neyin yanlış olduğunu ayar ekranında anlamalı; 404/403/429
-	 * ayrı ayrı açıklanır.
+	 * The user must be able to tell what is wrong from the settings screen, so
+	 * 404, 403 and 429 each get their own explanation.
 	 *
-	 * @param array $result No404_Client::ping çıktısı.
+	 * @param array $result Output of No404_Client::ping.
 	 * @return string
 	 */
 	protected static function describe( array $result ) {

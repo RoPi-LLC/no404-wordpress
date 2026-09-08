@@ -1,9 +1,9 @@
 <?php
 /**
- * WordPress önbellek adaptörü (transient).
+ * WordPress cache adapter (transients).
  *
- * Transient'lar site (blog) başınadır; multisite'ta `switch_to_blog` sonrası
- * doğru mağazanın önbelleği kendiliğinden kullanılır — ek iş gerekmez.
+ * Transients are per site (blog), so after `switch_to_blog` on multisite the
+ * right store's cache is used automatically — nothing extra to do.
  *
  * @package no404
  */
@@ -14,30 +14,30 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class No404_WP_Cache implements No404_Cache_Interface {
 
-	/** Tüm transient adlarının ortak öneki (uninstall temizliği buna dayanır). */
+	/** Shared prefix for every transient name (uninstall cleanup relies on it). */
 	const PREFIX = 'no404_';
 
-	/** Nesil (generation) sayacını tutan option. Artırmak = önbelleği geçersiz kılmak. */
+	/** Option holding the generation counter. Incrementing it invalidates the cache. */
 	const GENERATION_OPTION = 'no404_cache_generation';
 
 	/** @var int|null */
 	protected $generation = null;
 
 	/**
-	 * @param string $key Anahtar.
+	 * @param string $key Key.
 	 * @return mixed|null
 	 */
 	public function get( $key ) {
 		$value = get_transient( $this->name( $key ) );
 
-		// Transient API "yok" durumunu false ile bildirir; sözleşmemiz null.
+		// The transient API signals "missing" with false; our contract says null.
 		return ( false === $value ) ? null : $value;
 	}
 
 	/**
-	 * @param string $key   Anahtar.
-	 * @param mixed  $value Değer.
-	 * @param int    $ttl   Saniye.
+	 * @param string $key   Key.
+	 * @param mixed  $value Value.
+	 * @param int    $ttl   Seconds.
 	 * @return void
 	 */
 	public function set( $key, $value, $ttl ) {
@@ -45,12 +45,12 @@ class No404_WP_Cache implements No404_Cache_Interface {
 	}
 
 	/**
-	 * Önbelleği geçersiz kılar.
+	 * Invalidates the cache.
 	 *
-	 * Satır satır silmek yerine nesil sayacını artırırız: harici bir nesne
-	 * önbelleği (Redis/Memcached) kurulu olduğunda transient'lar veritabanında
-	 * DURMAZ, dolayısıyla `DELETE ... LIKE` çalışmaz. Sayaç her kurulumda çalışır.
-	 * Eski kayıtlar kendi süreleri dolunca düşer.
+	 * Instead of deleting row by row we increment a generation counter: when an
+	 * external object cache (Redis/Memcached) is installed the transients are NOT
+	 * in the database, so `DELETE ... LIKE` does nothing. The counter works on
+	 * every setup. Old entries fall away when their own TTL expires.
 	 *
 	 * @return void
 	 */
@@ -61,9 +61,9 @@ class No404_WP_Cache implements No404_Cache_Interface {
 	}
 
 	/**
-	 * Anahtarı transient adına çevirir.
+	 * Turns a key into a transient name.
 	 *
-	 * @param string $key Ham anahtar.
+	 * @param string $key Raw key.
 	 * @return string
 	 */
 	protected function name( $key ) {
