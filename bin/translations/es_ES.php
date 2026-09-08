@@ -1,9 +1,9 @@
 <?php
 /**
- * Español (es_ES) — catálogo de traducción. EL IDIOMA DE ORIGEN ES EL INGLÉS.
+ * Spanish (es_ES) translation catalogue. THE SOURCE LANGUAGE IS ENGLISH.
  *
- * Tratamiento de «tú», igual que la traducción del núcleo de WordPress en
- * es_ES. Se usan comillas angulares y signos de apertura (¿ ¡) donde procede.
+ * Informal address ("tú"), matching the WordPress core es_ES translation.
+ * Angle quotes and opening marks (¿ ¡) are used where they belong.
  *
  * @package no404
  */

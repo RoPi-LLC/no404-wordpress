@@ -1,9 +1,10 @@
 <?php
 /**
- * हिन्दी (hi_IN) — अनुवाद सूची। स्रोत भाषा अंग्रेज़ी है।
+ * Hindi (hi_IN) translation catalogue. THE SOURCE LANGUAGE IS ENGLISH.
  *
- * WordPress के hi_IN अनुवाद की तरह «आप» का प्रयोग। तकनीकी शब्द (URL, API,
- * HTTP, 301, no404) जस के तस रखे गए हैं — हिन्दी WordPress में भी यही चलन है।
+ * Uses "आप", as the WordPress hi_IN translation does. Technical terms (URL,
+ * API, HTTP, 301, no404) are left in Latin script — that is also the convention
+ * in Hindi WordPress.
  *
  * @package no404
  */

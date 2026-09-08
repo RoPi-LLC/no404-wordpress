@@ -1,14 +1,14 @@
 <?php
 /**
- * no404 çekirdek davranış testleri — WordPress olmadan çalışır.
- * Çalıştırma: php test-core.php
+ * no404 core behaviour tests — these run without WordPress.
+ * Run with: php test-core.php
  */
 
-define( 'ABSPATH', true ); // Doğrudan erişim korumasını geç.
+define( 'ABSPATH', true ); // Satisfy the direct-access guard.
 
-// Çekirdeğin dokunduğu TEK WordPress fonksiyonu. Gerçeğinin de yaptığı şey
-// budur (eski PHP'nin şemasız URL tutarsızlığını normalleştirir); burada
-// sahtesini tanımlıyoruz ki sınıf WordPress yüklenmeden de sınanabilsin.
+// The ONLY WordPress function the core touches. This is exactly what the real
+// one does (it normalises old PHP's scheme-less URL inconsistency); we define a
+// stub so the class can be exercised without WordPress loaded.
 if ( ! function_exists( 'wp_parse_url' ) ) {
 	function wp_parse_url( $url, $component = -1 ) {
 		return parse_url( $url, $component );
@@ -20,7 +20,7 @@ require $base . 'interface-no404-http.php';
 require $base . 'interface-no404-cache.php';
 require $base . 'class-no404-client.php';
 
-/** Sahte HTTP: sıraya konan yanıtları döner, çağrı sayısını sayar. */
+/** Fake HTTP: returns queued responses and counts the calls. */
 class FakeHttp implements No404_Http_Interface {
 	public $calls = 0;
 	public $queue = array();
@@ -36,7 +36,7 @@ class FakeHttp implements No404_Http_Interface {
 	}
 }
 
-/** Sahte cache: bellek içi, TTL yok sayılır (test kısa). */
+/** Fake cache: in memory, TTL ignored (the test is short-lived). */
 class FakeCache implements No404_Cache_Interface {
 	public $store = array();
 	public function get( $key ) { return isset( $this->store[ $key ] ) ? $this->store[ $key ] : null; }
@@ -69,7 +69,7 @@ function make_client( $http, $cache, $extra = array() ) {
 		array(
 			'api_base'      => 'https://no404.tr',
 			'api_key'       => 'testkey123',
-			'allowed_hosts' => array( 'magaza.com', 'www.magaza.com' ),
+			'allowed_hosts' => array( 'store.example', 'www.store.example' ),
 			'ignored_prefixes' => array( '/wp-admin', '/wp-json' ),
 		),
 		$extra
@@ -77,130 +77,130 @@ function make_client( $http, $cache, $extra = array() ) {
 	return new No404_Client( $config, $http, $cache );
 }
 
-echo "\n=== normalize_path (sunucudaki cleanPath ile aynı olmalı) ===\n";
+echo "\n=== normalize_path (must match cleanPath on the server) ===\n";
 $c = make_client( new FakeHttp(), new FakeCache() );
-check( 'sondaki slash atilir', $c->normalize_path( '/urun/altin-yuzuk/' ), '/urun/altin-yuzuk' );
-check( 'cift slash tekleşir', $c->normalize_path( '//urun//x' ), '/urun/x' );
-check( 'sorgu dizesi atilir', $c->normalize_path( '/urun?utm_source=google' ), '/urun' );
-check( 'fragment atilir', $c->normalize_path( '/urun#bolum' ), '/urun' );
-check( 'tam URL yola iner', $c->normalize_path( 'https://magaza.com/urun/x' ), '/urun/x' );
-check( 'ters slash duzelir', $c->normalize_path( '\\urun\\x' ), '/urun/x' );
-check( 'kok korunur', $c->normalize_path( '/' ), '/' );
-check( 'satir sonu temizlenir', $c->normalize_path( "/urun\r\n" ), '/urun' );
+check( 'trailing slash is dropped', $c->normalize_path( '/product/gold-ring/' ), '/product/gold-ring' );
+check( 'double slash collapses', $c->normalize_path( '//product//x' ), '/product/x' );
+check( 'query string is dropped', $c->normalize_path( '/product?utm_source=google' ), '/product' );
+check( 'fragment is dropped', $c->normalize_path( '/product#section' ), '/product' );
+check( 'full URL reduces to a path', $c->normalize_path( 'https://store.example/product/x' ), '/product/x' );
+check( 'backslash is normalised', $c->normalize_path( '\\product\\x' ), '/product/x' );
+check( 'root is preserved', $c->normalize_path( '/' ), '/' );
+check( 'newlines are stripped', $c->normalize_path( "/product\r\n" ), '/product' );
 
-echo "\n=== is_ignored_path (kota koruması) ===\n";
-check( 'css atlanir', $c->is_ignored_path( '/tema/style.css' ), true );
-check( 'png atlanir', $c->is_ignored_path( '/gorsel/foto.PNG' ), true );
-check( 'wp-admin atlanir', $c->is_ignored_path( '/wp-admin/edit.php' ), true );
-check( 'wp-json atlanir', $c->is_ignored_path( '/wp-json/wp/v2/posts' ), true );
-check( 'well-known atlanir', $c->is_ignored_path( '/.well-known/acme' ), true );
-check( 'gercek urun atlanmaz', $c->is_ignored_path( '/14-gram-altin-yuzuk-102' ), false );
-check( 'nokta iceren slug atlanmaz', $c->is_ignored_path( '/urun/3.5-mm-kablo' ), false );
-check( 'onek yanlis eslesmez', $c->is_ignored_path( '/wp-adminler-icin-rehber' ), false );
+echo "\n=== is_ignored_path (quota protection) ===\n";
+check( 'css is skipped', $c->is_ignored_path( '/tema/style.css' ), true );
+check( 'png is skipped', $c->is_ignored_path( '/gorsel/foto.PNG' ), true );
+check( 'wp-admin is skipped', $c->is_ignored_path( '/wp-admin/edit.php' ), true );
+check( 'wp-json is skipped', $c->is_ignored_path( '/wp-json/wp/v2/posts' ), true );
+check( 'well-known is skipped', $c->is_ignored_path( '/.well-known/acme' ), true );
+check( 'a real product is not skipped', $c->is_ignored_path( '/14-gram-gold-ring-102' ), false );
+check( 'a slug containing a dot is not skipped', $c->is_ignored_path( '/product/3.5-mm-cable' ), false );
+check( 'prefix does not match by accident', $c->is_ignored_path( '/wp-administration-guide' ), false );
 
-echo "\n=== decide_status (301/302 karari) ===\n";
+echo "\n=== decide_status (the 301/302 decision) ===\n";
 check( 'REDIRECT -> 301', $c->decide_status( array( 'source' => 'REDIRECT', 'score' => 1.0 ) ), 301 );
-check( 'CATALOG yuksek skor -> 301', $c->decide_status( array( 'source' => 'CATALOG', 'score' => 0.92 ) ), 301 );
-check( 'CATALOG esik ustu tam 0.5 -> 301', $c->decide_status( array( 'source' => 'CATALOG', 'score' => 0.5 ) ), 301 );
-check( 'CATALOG dusuk skor -> 302', $c->decide_status( array( 'source' => 'CATALOG', 'score' => 0.42 ) ), 302 );
+check( 'CATALOG high score -> 301', $c->decide_status( array( 'source' => 'CATALOG', 'score' => 0.92 ) ), 301 );
+check( 'CATALOG exactly at the 0.5 threshold -> 301', $c->decide_status( array( 'source' => 'CATALOG', 'score' => 0.5 ) ), 301 );
+check( 'CATALOG low score -> 302', $c->decide_status( array( 'source' => 'CATALOG', 'score' => 0.42 ) ), 302 );
 check( 'FALLBACK -> 302', $c->decide_status( array( 'source' => 'FALLBACK', 'score' => 0.0 ) ), 302 );
 $forced = make_client( new FakeHttp(), new FakeCache(), array( 'force_301' => true ) );
-check( 'force_301 acikken FALLBACK -> 301', $forced->decide_status( array( 'source' => 'FALLBACK', 'score' => 0.0 ) ), 301 );
+check( 'FALLBACK -> 301 when force_301 is on', $forced->decide_status( array( 'source' => 'FALLBACK', 'score' => 0.0 ) ), 301 );
 
-echo "\n=== validate_target (acik yonlendirme + dongu korumasi) ===\n";
-check( 'izinli host gecer', $c->validate_target( 'https://magaza.com/yeni', '/eski' ), 'https://magaza.com/yeni' );
-check( 'yabanci host reddedilir', $c->validate_target( 'https://evil.com/x', '/eski' ), '' );
-check( 'protokol-goreli reddedilir', $c->validate_target( '//evil.com/x', '/eski' ), '' );
-check( 'javascript: reddedilir', $c->validate_target( 'javascript:alert(1)', '/eski' ), '' );
-check( 'data: reddedilir', $c->validate_target( 'data:text/html,x', '/eski' ), '' );
-check( 'goreli hedef gecer', $c->validate_target( '/yeni-urun', '/eski' ), '/yeni-urun' );
-check( 'DONGU: ayni yol reddedilir', $c->validate_target( 'https://magaza.com/eski', '/eski' ), '' );
-check( 'DONGU: goreli ayni yol reddedilir', $c->validate_target( '/eski', '/eski' ), '' );
-check( 'DONGU: sondaki slash farki da dongudur', $c->validate_target( 'https://magaza.com/eski/', '/eski' ), '' );
-check( 'baslik enjeksiyonu reddedilir', $c->validate_target( "https://magaza.com/x\r\nX-Evil: 1", '/eski' ), '' );
-check( 'bos hedef reddedilir', $c->validate_target( '', '/eski' ), '' );
+echo "\n=== validate_target (open redirect + loop protection) ===\n";
+check( 'allowed host passes', $c->validate_target( 'https://store.example/new', '/old' ), 'https://store.example/new' );
+check( 'foreign host is rejected', $c->validate_target( 'https://evil.com/x', '/old' ), '' );
+check( 'protocol-relative is rejected', $c->validate_target( '//evil.com/x', '/old' ), '' );
+check( 'javascript: is rejected', $c->validate_target( 'javascript:alert(1)', '/old' ), '' );
+check( 'data: is rejected', $c->validate_target( 'data:text/html,x', '/old' ), '' );
+check( 'relative target passes', $c->validate_target( '/new-product', '/old' ), '/new-product' );
+check( 'LOOP: same path is rejected', $c->validate_target( 'https://store.example/old', '/old' ), '' );
+check( 'LOOP: same relative path is rejected', $c->validate_target( '/old', '/old' ), '' );
+check( 'LOOP: a trailing-slash difference is still a loop', $c->validate_target( 'https://store.example/old/', '/old' ), '' );
+check( 'header injection is rejected', $c->validate_target( "https://store.example/x\r\nX-Evil: 1", '/old' ), '' );
+check( 'empty target is rejected', $c->validate_target( '', '/old' ), '' );
 
-echo "\n=== resolve: onbellek kotayi koruyor mu? ===\n";
+echo "\n=== resolve: does the cache protect the quota? ===\n";
 $http  = new FakeHttp();
 $cache = new FakeCache();
 $cl    = make_client( $http, $cache );
-$http->queue = array( ok_response( '{"success":true,"found":true,"redirect":"https://magaza.com/yeni","score":0.9,"source":"CATALOG"}' ) );
-$r1 = $cl->resolve( '/eski-urun' );
-$r2 = $cl->resolve( '/eski-urun' );
-$r3 = $cl->resolve( '/eski-urun/' );          // normalize -> ayni anahtar
-$r4 = $cl->resolve( '/eski-urun?utm=abc' );   // sorgu atilir -> ayni anahtar
-check( 'ayni yol icin TEK API cagrisi', $http->calls, 1 );
-check( 'ikinci cagri cache den doner', $r2['redirect'], 'https://magaza.com/yeni' );
-check( 'sondaki slash cache i bolmez', $r3['redirect'], 'https://magaza.com/yeni' );
-check( 'utm parametresi cache i bolmez', $r4['redirect'], 'https://magaza.com/yeni' );
+$http->queue = array( ok_response( '{"success":true,"found":true,"redirect":"https://store.example/new","score":0.9,"source":"CATALOG"}' ) );
+$r1 = $cl->resolve( '/old-product' );
+$r2 = $cl->resolve( '/old-product' );
+$r3 = $cl->resolve( '/old-product/' );          // normalize -> ayni anahtar
+$r4 = $cl->resolve( '/old-product?utm=abc' );   // sorgu atilir -> ayni anahtar
+check( 'ONE API call for the same path', $http->calls, 1 );
+check( 'second call comes from the cache', $r2['redirect'], 'https://store.example/new' );
+check( 'trailing slash does not split the cache', $r3['redirect'], 'https://store.example/new' );
+check( 'a utm parameter does not split the cache', $r4['redirect'], 'https://store.example/new' );
 
-echo "\n=== resolve: NEGATIF sonuc da cache lenir ===\n";
+echo "\n=== resolve: NEGATIVE results are cached too ===\n";
 $http  = new FakeHttp();
 $cache = new FakeCache();
 $cl    = make_client( $http, $cache );
 $http->queue = array(
 	ok_response( '{"success":true,"found":false,"redirect":null,"score":0,"source":"NONE"}' ),
-	ok_response( '{"success":true,"found":true,"redirect":"https://magaza.com/x","score":0.9,"source":"CATALOG"}' ),
+	ok_response( '{"success":true,"found":true,"redirect":"https://store.example/x","score":0.9,"source":"CATALOG"}' ),
 );
-$cl->resolve( '/hic-yok' );
-$cl->resolve( '/hic-yok' );
-$cl->resolve( '/hic-yok' );
-check( 'bulunamayan yol tekrar sorulmaz', $http->calls, 1 );
+$cl->resolve( '/nothing-here' );
+$cl->resolve( '/nothing-here' );
+$cl->resolve( '/nothing-here' );
+check( 'an unmatched path is not asked about again', $http->calls, 1 );
 
-echo "\n=== resolve: statik dosya API ye HIC sorulmaz ===\n";
+echo "\n=== resolve: a static file is NEVER sent to the API ===\n";
 $http  = new FakeHttp();
 $cl    = make_client( $http, new FakeCache() );
 $cl->resolve( '/tema/style.css' );
 $cl->resolve( '/wp-admin/x' );
 $cl->resolve( '/gorsel/a.jpg' );
-check( 'kara listede sifir cagri', $http->calls, 0 );
+check( 'zero calls for a blacklisted path', $http->calls, 0 );
 
-echo "\n=== FAIL-OPEN: no404 dustugunde magaza ayakta ===\n";
+echo "\n=== FAIL-OPEN: the store stays up when no404 is down ===\n";
 $http  = new FakeHttp();
 $cache = new FakeCache();
 $cl    = make_client( $http, $cache );
 $http->queue = array( array( 'ok' => false, 'status' => 0, 'body' => '', 'error' => 'cURL timeout' ) );
-$r = $cl->resolve( '/eski-urun' );
-check( 'timeout -> null (yonlendirme yok)', $r, null );
-$r = $cl->resolve( '/baska-urun' );
-check( 'DEVRE KESICI: ikinci 404 API ye gitmez', $http->calls, 1 );
-check( 'devre kesikken sonuc null', $r, null );
+$r = $cl->resolve( '/old-product' );
+check( 'timeout -> null (no redirect)', $r, null );
+$r = $cl->resolve( '/another-product' );
+check( 'CIRCUIT BREAKER: the second 404 does not reach the API', $http->calls, 1 );
+check( 'result is null while the breaker is open', $r, null );
 
-echo "\n=== HTTP hata kodlari ===\n";
+echo "\n=== HTTP error codes ===\n";
 foreach ( array( 404, 403, 429, 500 ) as $status ) {
 	$http  = new FakeHttp();
 	$cl    = make_client( $http, new FakeCache() );
 	$http->queue = array( array( 'ok' => true, 'status' => $status, 'body' => '{"success":false,"message":"x"}', 'error' => '' ) );
-	check( "HTTP $status -> null", $cl->resolve( '/eski' ), null );
+	check( "HTTP $status -> null", $cl->resolve( '/old' ), null );
 }
 
-echo "\n=== Bozuk yanit yutulur (fail-open) ===\n";
+echo "\n=== A malformed response is swallowed (fail-open) ===\n";
 $http = new FakeHttp();
 $cl   = make_client( $http, new FakeCache() );
-$http->queue = array( ok_response( '<html>bu JSON degil</html>' ) );
-check( 'HTML govde -> null', $cl->resolve( '/eski' ), null );
+$http->queue = array( ok_response( '<html>this is not JSON</html>' ) );
+check( 'HTML body -> null', $cl->resolve( '/old' ), null );
 
 $http = new FakeHttp();
 $cl   = make_client( $http, new FakeCache() );
 $http->queue = array( ok_response( '{"success":true}' ) );
-$r = $cl->resolve( '/eski' );
-check( 'eksik alanlar cokmez', is_array( $r ) && null === $r['redirect'], true );
+$r = $cl->resolve( '/old' );
+check( 'missing fields do not crash it', is_array( $r ) && null === $r['redirect'], true );
 
-echo "\n=== Istek URL kurulumu ===\n";
+echo "\n=== Request URL construction ===\n";
 $http = new FakeHttp();
 $cl   = make_client( $http, new FakeCache() );
 $cl->resolve( '/14-gram-altin-yüzük', 'https://google.com/search?q=x' );
 check(
-	'URL dogru kuruldu',
+	'the URL was built correctly',
 	$http->last_url,
 	'https://no404.tr/api/v1/resolve/testkey123?path=' . rawurlencode( '/14-gram-altin-yüzük' ) . '&ref=' . rawurlencode( 'https://google.com/search?q=x' )
 );
 
-echo "\n=== Yapilandirilmamis eklenti sessizdir ===\n";
+echo "\n=== An unconfigured plugin stays silent ===\n";
 $http = new FakeHttp();
 $cl   = new No404_Client( array( 'api_base' => 'https://no404.tr', 'api_key' => '' ), $http, new FakeCache() );
-check( 'anahtar yokken null', $cl->resolve( '/eski' ), null );
-check( 'anahtar yokken sifir cagri', $http->calls, 0 );
+check( 'null when there is no key', $cl->resolve( '/old' ), null );
+check( 'zero calls when there is no key', $http->calls, 0 );
 
 echo "\n----------------------------------------\n";
 echo "PASS: $passed   FAIL: $failed\n";

@@ -1,13 +1,13 @@
 <?php
 /**
- * العربية (ar) — كتالوج الترجمة. لغة المصدر هي الإنجليزية.
+ * Arabic (ar) translation catalogue. THE SOURCE LANGUAGE IS ENGLISH.
  *
- * عربية فصحى معاصرة، بصيغة المخاطب كما في ترجمة نواة ووردبريس. المصطلحات
- * التقنية (URL, API, HTTP, 301, no404) تُترك بحروفها اللاتينية، وهو العُرف
- * المتّبع في ترجمة ووردبريس العربية.
+ * Modern Standard Arabic, second person, as in the WordPress core translation.
+ * Technical terms (URL, API, HTTP, 301, no404) keep their Latin script, which is
+ * the convention in the Arabic WordPress translation.
  *
- * ملاحظة: هذه لغة تُكتب من اليمين إلى اليسار؛ ووردبريس يقلب اتجاه لوحة
- * التحكّم تلقائيًا، ولا حاجة إلى أي CSS إضافي من الإضافة.
+ * Note: this is a right-to-left language. WordPress flips the admin direction
+ * automatically; the plugin needs no extra CSS.
  *
  * @package no404
  */

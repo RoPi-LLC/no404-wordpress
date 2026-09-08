@@ -1,10 +1,10 @@
 <?php
 /**
- * Deutsch (de_DE) — Übersetzungskatalog. QUELLSPRACHE IST ENGLISCH.
+ * German (de_DE) translation catalogue. THE SOURCE LANGUAGE IS ENGLISH.
  *
- * Anrede: „du“ — wie in der WordPress-Kernübersetzung de_DE. Die förmliche
- * Variante lebt bei WordPress in einer eigenen Locale (de_DE_formal); wer sie
- * braucht, legt hier eine zweite Datei an.
+ * Address form: informal "du", matching the WordPress core de_DE translation.
+ * WordPress keeps the formal variant in a separate locale (de_DE_formal); if it
+ * is ever needed, add a second file here.
  *
  * @package no404
  */

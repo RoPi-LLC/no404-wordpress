@@ -1,20 +1,21 @@
 <?php
 /**
- * Desteklenen yerel ayarlar (locale) kaydı.
+ * Registry of supported locales.
  *
- * Kaynak dil İNGİLİZCEDİR ve burada yer ALMAZ: koddaki dizeler zaten
- * İngilizcedir, İngilizce bir katalog üretmenin anlamı yok. WordPress
- * çeviri bulamazsa msgid'i olduğu gibi basar — yani varsayılan dil,
- * kurulum ekranı dahil, her zaman İngilizcedir.
+ * The source language is ENGLISH and is NOT listed here: the strings in the code
+ * are already English, so producing an English catalogue would be pointless. When
+ * WordPress finds no translation it prints the msgid as-is — which means the
+ * default language, setup screen included, is always English.
  *
- * Anahtar = WordPress locale kodu. Katalog dosyası `bin/translations/<kod>.php`,
- * üretilen dosyalar `languages/<slug>-<kod>.po|.mo` olur. `ar` gibi ülke soneki
- * olmayan kodlar WordPress'te de tek parçadır — uydurma bir `ar_AR` YAZMAYIN,
- * o dosya hiç yüklenmez.
+ * Key = the WordPress locale code. The catalogue file is
+ * `bin/translations/<code>.php`, and the generated files are
+ * `languages/<slug>-<code>.po|.mo`. Codes without a country suffix, such as `ar`,
+ * are single-part in WordPress too — do NOT invent an `ar_AR`, that file would
+ * never load.
  *
- * `plural` değerleri translate.wordpress.org'daki tanımlarla birebir aynıdır.
- * Şu an çoğul içeren metin yok (`_n()` kullanılmıyor), ama başlık yanlışsa
- * ileride eklenecek ilk çoğul sessizce bozulur.
+ * The `plural` values match the definitions on translate.wordpress.org exactly.
+ * Nothing uses plurals yet (`_n()` is not called anywhere), but a wrong header
+ * would silently break the first plural string someone adds.
  *
  * @package no404
  */

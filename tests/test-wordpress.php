@@ -1,23 +1,23 @@
 <?php
 /**
- * Entegrasyon testi: eklentiyi SAHTE WordPress fonksiyonlarıyla yükler ve
- * bir 404 isteğini uçtan uca çalıştırır.
+ * Integration test: loads the plugin against STUBBED WordPress functions and
+ * runs a 404 request end to end.
  *
- * Amaç, gerçek bir WordPress kurulumu olmadan şunları yakalamak:
- *   - tanımsız/yanlış yazılmış WordPress fonksiyon çağrıları
- *   - kanca kaydı ve yönlendirme kararının doğru işlemesi
- *   - fail-open davranışının sarmalayıcı katmanda da korunması
+ * The point is to catch, without a real WordPress installation:
+ *   - calls to undefined or misspelled WordPress functions
+ *   - hook registration and the redirect decision behaving correctly
+ *   - fail-open being preserved in the wrapper layer too
  *
- * Çalıştırma: php tests/test-wordpress.php
+ * Run with: php tests/test-wordpress.php
  */
 
-// ---------------------------------------------------------------- test altyapısı
+// ---------------------------------------------------------------- test harness
 
 /*
- * ÇIKTI TAMPONU ŞART: yönlendirici `headers_sent()` kontrolü yapar (doğru
- * davranış — başlık gönderilmişse yönlendiremeyiz). CLI'da ilk `echo` ile
- * headers_sent() true olur ve yönlendirme hiç denenmez. Tamponlayarak
- * gerçek istek koşullarını taklit ediyoruz.
+ * OUTPUT BUFFERING IS MANDATORY: the redirector checks `headers_sent()` (correct
+ * behaviour — you cannot redirect once headers are out). On the CLI the first
+ * `echo` makes headers_sent() true and the redirect is never attempted. Buffering
+ * reproduces real request conditions.
  */
 ob_start();
 
@@ -122,13 +122,13 @@ function set_transient( $key, $value, $ttl ) {
 	return true;
 }
 
-function home_url( $path = '' ) { return 'https://magaza.com' . $path; }
-function site_url( $path = '' ) { return 'https://magaza.com' . $path; }
-function content_url( $path = '' ) { return 'https://magaza.com/wp-content' . $path; }
+function home_url( $path = '' ) { return 'https://store.example' . $path; }
+function site_url( $path = '' ) { return 'https://store.example' . $path; }
+function content_url( $path = '' ) { return 'https://store.example/wp-content' . $path; }
 function plugin_dir_path( $file ) { return dirname( $file ) . '/'; }
 function plugin_basename( $file ) { return 'no404/' . basename( $file ); }
-function plugins_url( $path, $file ) { return 'https://magaza.com/wp-content/plugins/no404/' . $path; }
-function admin_url( $path = '' ) { return 'https://magaza.com/wp-admin/' . $path; }
+function plugins_url( $path, $file ) { return 'https://store.example/wp-content/plugins/no404/' . $path; }
+function admin_url( $path = '' ) { return 'https://store.example/wp-admin/' . $path; }
 function wp_parse_url( $url, $component = -1 ) { return parse_url( $url, $component ); }
 function get_current_blog_id() { return 1; }
 function load_plugin_textdomain() { return true; }
@@ -144,8 +144,8 @@ function wp_doing_cron() { return false; }
 function add_settings_error() {}
 function __( $text, $domain = '' ) { return $text; }
 /**
- * Gerçek `esc_url_raw` izin verilmeyen şemalarda BOŞ string döner; sahte sürüm
- * bunu taklit etmezse protokol doğrulaması test edilmemiş olur.
+ * The real `esc_url_raw` returns an EMPTY string for disallowed schemes; if the
+ * stub does not reproduce that, protocol validation goes untested.
  */
 function esc_url_raw( $url, $protocols = null ) {
 	$url = trim( (string) $url );
@@ -169,17 +169,18 @@ function wp_validate_redirect( $location, $fallback = '' ) {
 	if ( empty( $parts['host'] ) ) {
 		return ( 0 === strpos( $location, '/' ) && 0 !== strpos( $location, '//' ) ) ? $location : $fallback;
 	}
-	$allowed = apply_filters( 'allowed_redirect_hosts', array( 'magaza.com' ) );
+	$allowed = apply_filters( 'allowed_redirect_hosts', array( 'store.example' ) );
 	return in_array( strtolower( $parts['host'] ), $allowed, true ) ? $location : $fallback;
 }
 
 function wp_redirect( $location, $status = 302, $by = '' ) {
 	$GLOBALS['wp_redirects'][] = array( 'location' => $location, 'status' => $status, 'by' => $by );
-	return false; // false döndürüyoruz ki test `exit` etmesin.
+	return false; // Returning false keeps the test from calling `exit`.
 }
 
-// WordPress'teki gerçek davranış: hedefi allowlist'e karşı doğrular, sonra
-// wp_redirect'e devreder. Boş fallback ile doğrulama düşerse yönlendirme YOK.
+// The real WordPress behaviour: validate the target against the allow-list, then
+// delegate to wp_redirect. With an empty fallback, a failed validation means NO
+// redirect.
 function wp_safe_redirect( $location, $status = 302, $by = '' ) {
 	$location = wp_validate_redirect( $location, '' );
 	if ( '' === $location ) {
@@ -212,7 +213,7 @@ function api_ok( $body ) {
 	return array( 'response' => array( 'code' => 200 ), 'body' => $body );
 }
 
-// ---------------------------------------------------------------- eklentiyi yükle
+// ---------------------------------------------------------------- load the plugin
 
 $GLOBALS['wp_options']['no404_settings'] = array(
 	'enabled'    => 1,
@@ -223,8 +224,9 @@ $GLOBALS['wp_options']['no404_settings'] = array(
 	'force_301'  => 0,
 );
 
-// Çeviri kaydı: gerçek WordPress'te bu nesne eklentiler yüklenmeden ÖNCE kurulur.
-// Sahtesini de öyle kuruyoruz, yoksa eklenti yolu bildiremez ve test bunu göremez.
+// Translation registry: in real WordPress this object exists BEFORE plugins load.
+// The stub is set up the same way; otherwise the plugin cannot register its path
+// and the test would never see it.
 class WP_Textdomain_Registry {
 	public $custom = array();
 	public function set_custom_path( $domain, $path ) {
@@ -235,24 +237,25 @@ $GLOBALS['wp_textdomain_registry'] = new WP_Textdomain_Registry();
 
 require __DIR__ . '/../no404.php';
 
-echo "\n=== Eklenti yuklendi, kancalar bagli mi? ===\n";
-t_check( 'init kancasi kayitli', isset( $GLOBALS['wp_actions']['init'] ), true );
+echo "\n=== Plugin loaded; are the hooks registered? ===\n";
+t_check( 'init hook is registered', isset( $GLOBALS['wp_actions']['init'] ), true );
 
-// load_plugin_textdomain() çağrılmıyor (Plugin Check uyarısı); bunun yerine
-// paketteki languages/ klasörü doğrudan kayda bildiriliyor. Bu satır düşerse
-// pakete gömülü 7 dilin .mo dosyası HİÇ yüklenmez ve hata sessizce olur —
-// arayüz her dilde İngilizce görünür, uyarı çıkmaz.
+// load_plugin_textdomain() is not called (Plugin Check warns about it); instead
+// the bundled languages/ folder is registered directly. If that line disappears,
+// none of the seven bundled .mo files load — and the failure is silent: the UI
+// just appears in English in every language, with no warning.
 t_check(
-	'ceviri klasoru kayda bildirildi',
+	'translations folder was registered',
 	isset( $GLOBALS['wp_textdomain_registry']->custom['no404-auto-404-redirect'] ),
 	true
 );
 t_check(
-	'bildirilen yol eklentinin languages/ klasoru',
+	'registered path is the plugin languages/ folder',
 	basename( (string) $GLOBALS['wp_textdomain_registry']->custom['no404-auto-404-redirect'] ),
 	'languages'
 );
-// Yorumlarda adı geçebilir; ARANAN gerçek çağrıdır, o yüzden token taraması.
+// The name may appear in comments; what we look for is a real CALL, hence the
+// token scan.
 $no404_textdomain_calls = 0;
 foreach ( array_merge( array( __DIR__ . '/../no404.php' ), glob( __DIR__ . '/../includes/*.php' ) ) as $no404_src ) {
 	foreach ( token_get_all( file_get_contents( $no404_src ) ) as $no404_tok ) {
@@ -261,20 +264,20 @@ foreach ( array_merge( array( __DIR__ . '/../no404.php' ), glob( __DIR__ . '/../
 		}
 	}
 }
-t_check( 'kaynakta load_plugin_textdomain cagrisi yok', $no404_textdomain_calls, 0 );
+t_check( 'no load_plugin_textdomain call in the source', $no404_textdomain_calls, 0 );
 
-// `init` tetiklenince yönlendirici bağlanmalı.
+// Firing `init` must register the redirector.
 do_action( 'init' );
-t_check( 'template_redirect kancasi kayitli', isset( $GLOBALS['wp_actions']['template_redirect'] ), true );
-t_check( 'oncelik 9999 (diger SEO eklentilerinden sonra)', isset( $GLOBALS['wp_actions']['template_redirect'][9999] ), true );
+t_check( 'template_redirect hook is registered', isset( $GLOBALS['wp_actions']['template_redirect'] ), true );
+t_check( 'priority 9999 (after other SEO plugins)', isset( $GLOBALS['wp_actions']['template_redirect'][9999] ), true );
 
 /**
- * Bir 404 isteğini simüle eder.
+ * Simulates a 404 request.
  *
- * $fresh=true önbelleği VE devre kesiciyi temizler. Bu şart: bir senaryoda
- * oluşan taşıma hatası devre kesiciyi tetikler ve sonraki senaryolar sessizce
- * hiç istek göndermez — testler de "geçmiş" görünür ama aslında hiçbir şeyi
- * doğrulamamış olur.
+ * $fresh=true clears the cache AND the circuit breaker. That is mandatory: a
+ * transport failure in one scenario trips the breaker, and later scenarios then
+ * silently send no request at all — the tests look like they "passed" while
+ * verifying nothing.
  */
 function simulate( $request_uri, array $queue = array(), $referer = null, $fresh = true ) {
 	if ( $fresh ) {
@@ -293,117 +296,117 @@ function simulate( $request_uri, array $queue = array(), $referer = null, $fresh
 	return $GLOBALS['wp_redirects'];
 }
 
-echo "\n=== Yuksek skorlu katalog eslesmesi -> 301 ===\n";
+echo "\n=== High-scoring catalogue match -> 301 ===\n";
 $r = simulate(
-	'/eski-altin-yuzuk',
-	array( api_ok( '{"success":true,"found":true,"redirect":"https://magaza.com/14-gram-altin-yuzuk","score":0.92,"source":"CATALOG"}' ) )
+	'/old-gold-ring',
+	array( api_ok( '{"success":true,"found":true,"redirect":"https://store.example/14-gram-gold-ring","score":0.92,"source":"CATALOG"}' ) )
 );
-t_check( 'yonlendirme yapildi', count( $r ), 1 );
-t_check( 'hedef dogru', $r[0]['location'], 'https://magaza.com/14-gram-altin-yuzuk' );
-t_check( 'durum 301', $r[0]['status'], 301 );
+t_check( 'a redirect happened', count( $r ), 1 );
+t_check( 'target is correct', $r[0]['location'], 'https://store.example/14-gram-gold-ring' );
+t_check( 'status is 301', $r[0]['status'], 301 );
 t_check( 'X-Redirect-By: no404', $r[0]['by'], 'no404' );
 
-echo "\n=== Elle tanimli yonlendirme -> 301 ===\n";
+echo "\n=== Manually defined redirect -> 301 ===\n";
 $r = simulate(
-	'/kampanya-2019',
-	array( api_ok( '{"success":true,"found":true,"redirect":"https://magaza.com/kampanyalar","score":1,"source":"REDIRECT"}' ) )
+	'/campaign-2019',
+	array( api_ok( '{"success":true,"found":true,"redirect":"https://store.example/campaigns","score":1,"source":"REDIRECT"}' ) )
 );
-t_check( 'durum 301', $r[0]['status'], 301 );
+t_check( 'status is 301', $r[0]['status'], 301 );
 
-echo "\n=== Dusuk skorlu tahmin -> 302 (geri alinabilir) ===\n";
+echo "\n=== Low-scoring guess -> 302 (reversible) ===\n";
 $r = simulate(
-	'/belirsiz-sayfa',
-	array( api_ok( '{"success":true,"found":true,"redirect":"https://magaza.com/olabilir","score":0.35,"source":"CATALOG"}' ) )
+	'/uncertain-page',
+	array( api_ok( '{"success":true,"found":true,"redirect":"https://store.example/maybe","score":0.35,"source":"CATALOG"}' ) )
 );
-t_check( 'durum 302', $r[0]['status'], 302 );
+t_check( 'status is 302', $r[0]['status'], 302 );
 
 echo "\n=== FALLBACK -> 302 ===\n";
 $r = simulate(
-	'/tamamen-alakasiz',
-	array( api_ok( '{"success":true,"found":false,"redirect":"https://magaza.com/","score":0,"source":"FALLBACK"}' ) )
+	'/completely-unrelated',
+	array( api_ok( '{"success":true,"found":false,"redirect":"https://store.example/","score":0,"source":"FALLBACK"}' ) )
 );
-t_check( 'durum 302', $r[0]['status'], 302 );
+t_check( 'status is 302', $r[0]['status'], 302 );
 
-echo "\n=== Eslesme yok -> yonlendirme YOK (tema 404 gosterir) ===\n";
+echo "\n=== No match -> NO redirect (the theme shows its 404) ===\n";
 $r = simulate(
-	'/hicbir-sey',
+	'/nothing',
 	array( api_ok( '{"success":true,"found":false,"redirect":null,"score":0,"source":"NONE"}' ) )
 );
-t_check( 'yonlendirme yok', count( $r ), 0 );
+t_check( 'no redirect', count( $r ), 0 );
 
-echo "\n=== FAIL-OPEN: API cokse bile sayfa render edilir ===\n";
-$r = simulate( '/eski-urun-x', array( new WP_Error( 'http_request_failed', 'Operation timed out' ) ) );
-t_check( 'yonlendirme yok, hata yutuldu', count( $r ), 0 );
+echo "\n=== FAIL-OPEN: the page renders even if the API dies ===\n";
+$r = simulate( '/old-product-x', array( new WP_Error( 'http_request_failed', 'Operation timed out' ) ) );
+t_check( 'no redirect; the error was swallowed', count( $r ), 0 );
 
-echo "\n=== ACIK YONLENDIRME: yabanci host reddedilir ===\n";
+echo "\n=== OPEN REDIRECT: a foreign host is rejected ===\n";
 $GLOBALS['http_calls'] = 0;
 $r = simulate(
-	'/tuzak',
+	'/trap',
 	array( api_ok( '{"success":true,"found":true,"redirect":"https://evil.com/phishing","score":0.99,"source":"CATALOG"}' ) )
 );
-t_check( 'API gercekten soruldu (test bos gecmiyor)', $GLOBALS['http_calls'], 1 );
-t_check( 'evil.com REDDEDILDI', count( $r ), 0 );
+t_check( 'the API really was asked (the test is not vacuous)', $GLOBALS['http_calls'], 1 );
+t_check( 'evil.com was REJECTED', count( $r ), 0 );
 
-echo "\n=== DONGU: kendine yonlendirme reddedilir ===\n";
+echo "\n=== LOOP: a self-redirect is rejected ===\n";
 $GLOBALS['http_calls'] = 0;
 $r = simulate(
-	'/dongu',
-	array( api_ok( '{"success":true,"found":true,"redirect":"https://magaza.com/dongu","score":0.99,"source":"CATALOG"}' ) )
+	'/loop',
+	array( api_ok( '{"success":true,"found":true,"redirect":"https://store.example/loop","score":0.99,"source":"CATALOG"}' ) )
 );
-t_check( 'API gercekten soruldu (test bos gecmiyor)', $GLOBALS['http_calls'], 1 );
-t_check( 'kendine yonlendirme REDDEDILDI', count( $r ), 0 );
+t_check( 'the API really was asked (the test is not vacuous)', $GLOBALS['http_calls'], 1 );
+t_check( 'self-redirect was REJECTED', count( $r ), 0 );
 
-echo "\n=== 404 olmayan sayfada hic calismaz ===\n";
+echo "\n=== Never runs on a page that is not a 404 ===\n";
 $GLOBALS['wp_state']['is_404'] = false;
 $GLOBALS['http_calls'] = 0;
-$r = simulate( '/normal-sayfa', array( api_ok( '{"success":true,"found":true,"redirect":"https://magaza.com/x","score":0.9,"source":"CATALOG"}' ) ) );
-t_check( 'yonlendirme yok', count( $r ), 0 );
-t_check( 'API ye hic sorulmadi', $GLOBALS['http_calls'], 0 );
+$r = simulate( '/normal-page', array( api_ok( '{"success":true,"found":true,"redirect":"https://store.example/x","score":0.9,"source":"CATALOG"}' ) ) );
+t_check( 'no redirect', count( $r ), 0 );
+t_check( 'the API was never asked', $GLOBALS['http_calls'], 0 );
 $GLOBALS['wp_state']['is_404'] = true;
 
-echo "\n=== Statik dosya API ye sorulmaz ===\n";
+echo "\n=== A static file is not sent to the API ===\n";
 $GLOBALS['http_calls'] = 0;
 simulate( '/wp-content/uploads/foto.png' );
 simulate( '/wp-admin/edit.php' );
 simulate( '/tema/style.css' );
-t_check( 'sifir API cagrisi', $GLOBALS['http_calls'], 0 );
+t_check( 'zero API calls', $GLOBALS['http_calls'], 0 );
 
-echo "\n=== Onbellek: ayni yol tekrar sorulmaz (kota) ===\n";
-$body = '{"success":true,"found":true,"redirect":"https://magaza.com/hedef","score":0.9,"source":"CATALOG"}';
-simulate( '/tekrar-eden-bot-yolu', array( api_ok( $body ) ) ); // fresh
+echo "\n=== Cache: the same path is not asked twice (quota) ===\n";
+$body = '{"success":true,"found":true,"redirect":"https://store.example/target","score":0.9,"source":"CATALOG"}';
+simulate( '/repeated-bot-path', array( api_ok( $body ) ) ); // fresh
 $GLOBALS['http_calls'] = 0;
-$r  = simulate( '/tekrar-eden-bot-yolu', array(), null, false );
-$r2 = simulate( '/tekrar-eden-bot-yolu/', array(), null, false );
-t_check( 'sonraki isteklerde SIFIR API cagrisi', $GLOBALS['http_calls'], 0 );
-t_check( 'cache den yine yonlendiriyor', $r[0]['location'], 'https://magaza.com/hedef' );
-t_check( 'sondaki slash cache i bolmedi', count( $r2 ), 1 );
+$r  = simulate( '/repeated-bot-path', array(), null, false );
+$r2 = simulate( '/repeated-bot-path/', array(), null, false );
+t_check( 'ZERO API calls on subsequent requests', $GLOBALS['http_calls'], 0 );
+t_check( 'still redirects, from the cache', $r[0]['location'], 'https://store.example/target' );
+t_check( 'trailing slash did not split the cache', count( $r2 ), 1 );
 
-echo "\n=== DEVRE KESICI: API dustukten sonra bombardiman yok ===\n";
-simulate( '/kesici-1', array( new WP_Error( 'http_request_failed', 'timed out' ) ) ); // fresh
+echo "\n=== CIRCUIT BREAKER: no hammering after the API goes down ===\n";
+simulate( '/breaker-1', array( new WP_Error( 'http_request_failed', 'timed out' ) ) ); // fresh
 $GLOBALS['http_calls'] = 0;
-$r = simulate( '/kesici-2', array( api_ok( $body ) ), null, false );
-t_check( 'ikinci 404 API ye gitmedi', $GLOBALS['http_calls'], 0 );
-t_check( 'devre kesikken yonlendirme yok', count( $r ), 0 );
+$r = simulate( '/breaker-2', array( api_ok( $body ) ), null, false );
+t_check( 'the second 404 did not reach the API', $GLOBALS['http_calls'], 0 );
+t_check( 'no redirect while the breaker is open', count( $r ), 0 );
 
-echo "\n=== Istek: referer gonderiliyor, timeout uygulaniyor ===\n";
-simulate( '/referer-testi', array( api_ok( $body ) ), 'https://google.com/search?q=yuzuk' );
+echo "\n=== Request: referer is sent, timeout is applied ===\n";
+simulate( '/referer-test', array( api_ok( $body ) ), 'https://google.com/search?q=ring' );
 t_check(
-	'ref parametresi var',
-	false !== strpos( $GLOBALS['last_http_url'], 'ref=' . rawurlencode( 'https://google.com/search?q=yuzuk' ) ),
+	'the ref parameter is present',
+	false !== strpos( $GLOBALS['last_http_url'], 'ref=' . rawurlencode( 'https://google.com/search?q=ring' ) ),
 	true
 );
-t_check( 'timeout 1.5 sn', $GLOBALS['last_http_args']['timeout'], 1.5 );
-t_check( 'API anahtari URL de', false !== strpos( $GLOBALS['last_http_url'], '/resolve/no404_TESTKEY?' ), true );
+t_check( 'timeout is 1.5 s', $GLOBALS['last_http_args']['timeout'], 1.5 );
+t_check( 'the API key is in the URL', false !== strpos( $GLOBALS['last_http_url'], '/resolve/no404_TESTKEY?' ), true );
 
-echo "\n=== POST istegi islenmez ===\n";
+echo "\n=== A POST request is not handled ===\n";
 $GLOBALS['http_calls'] = 0;
-$_SERVER['REQUEST_URI'] = '/post-testi';
+$_SERVER['REQUEST_URI'] = '/post-test';
 $_SERVER['REQUEST_METHOD'] = 'POST';
 $GLOBALS['wp_redirects'] = array();
 do_action( 'template_redirect' );
-t_check( 'POST atlanir', $GLOBALS['http_calls'], 0 );
+t_check( 'POST is skipped', $GLOBALS['http_calls'], 0 );
 
-echo "\n=== Kapaliyken hic calismaz ===\n";
+echo "\n=== Never runs while switched off ===\n";
 $GLOBALS['wp_options']['no404_settings']['enabled'] = 0;
 $GLOBALS['wp_actions']['template_redirect'] = array();
 $plugin = No404_Plugin::instance();
@@ -411,9 +414,9 @@ $reflection = new ReflectionProperty( 'No404_Plugin', 'client' );
 $reflection->setAccessible( true );
 $reflection->setValue( $plugin, null );
 $plugin->setup_frontend();
-t_check( 'kanca bagli degil', empty( $GLOBALS['wp_actions']['template_redirect'] ), true );
+t_check( 'the hook is not registered', empty( $GLOBALS['wp_actions']['template_redirect'] ), true );
 
-echo "\n=== Ayar temizleme (sanitize) ===\n";
+echo "\n=== Settings sanitising ===\n";
 $clean = No404_Options::sanitize(
 	array(
 		'enabled'    => '1',
@@ -424,52 +427,53 @@ $clean = No404_Options::sanitize(
 		'force_301'  => '',
 	)
 );
-t_check( 'api_base sondaki slash atildi', $clean['api_base'], 'https://no404.tr' );
-t_check( 'anahtar trim edildi', $clean['api_key'], 'no404_YeniAnahtar-123_' );
-t_check( 'cache_ttl alt sinira cekildi', $clean['cache_ttl'], 60 );
-t_check( 'timeout_ms ust sinira cekildi', $clean['timeout_ms'], 10000 );
-t_check( 'force_301 kapali', $clean['force_301'], 0 );
+t_check( 'api_base trailing slash was dropped', $clean['api_base'], 'https://no404.tr' );
+t_check( 'the key was trimmed', $clean['api_key'], 'no404_YeniAnahtar-123_' );
+t_check( 'cache_ttl was clamped to the minimum', $clean['cache_ttl'], 60 );
+t_check( 'timeout_ms was clamped to the maximum', $clean['timeout_ms'], 10000 );
+t_check( 'force_301 is off', $clean['force_301'], 0 );
 
 $GLOBALS['wp_options']['no404_settings']['api_key'] = 'no404_ABCDEFGH1234';
 $masked = No404_Options::masked_key();
-t_check( 'maskeli anahtar tam anahtari sizdirmaz', false === strpos( $masked, 'ABCDEFGH' ), true );
-t_check( 'maskeli anahtar son 4 haneyi gosterir', substr( $masked, -4 ), '1234' );
+t_check( 'the masked key does not leak the full key', false === strpos( $masked, 'ABCDEFGH' ), true );
+t_check( 'the masked key shows the last 4 characters', substr( $masked, -4 ), '1234' );
 
 $clean = No404_Options::sanitize( array( 'api_key' => $masked, 'api_base' => 'https://no404.tr' ) );
-t_check( 'maskeli deger kaydedilirse anahtar KORUNUR', $clean['api_key'], 'no404_ABCDEFGH1234' );
+t_check( 'saving the masked value KEEPS the key', $clean['api_key'], 'no404_ABCDEFGH1234' );
 
 $clean = No404_Options::sanitize( array( 'api_key' => '', 'api_base' => 'https://no404.tr' ) );
-t_check( 'bos deger kaydedilirse anahtar KORUNUR', $clean['api_key'], 'no404_ABCDEFGH1234' );
+t_check( 'saving an empty value KEEPS the key', $clean['api_key'], 'no404_ABCDEFGH1234' );
 
-echo "\n=== Varsayilan no404 adresi ===\n";
+echo "\n=== The default no404 address ===\n";
 $defaults = No404_Options::defaults();
-t_check( 'varsayilan adres no404.tr', $defaults['api_base'], 'https://no404.tr' );
-t_check( 'sabit ile ayni', No404_Options::DEFAULT_API_BASE, 'https://no404.tr' );
+t_check( 'the default address is no404.tr', $defaults['api_base'], 'https://no404.tr' );
+t_check( 'matches the constant', No404_Options::DEFAULT_API_BASE, 'https://no404.tr' );
 
 // Kullanicinin "yanlis yazdim, geri alayim" yolu: alani bosalt.
-$GLOBALS['wp_options']['no404_settings']['api_base'] = 'https://eski-adres.example';
+$GLOBALS['wp_options']['no404_settings']['api_base'] = 'https://old-adres.example';
 $clean = No404_Options::sanitize( array( 'api_base' => '' ) );
-t_check( 'alan BOS birakilirsa varsayilana doner', $clean['api_base'], 'https://no404.tr' );
+t_check( 'an EMPTY field restores the default', $clean['api_base'], 'https://no404.tr' );
 
 $clean = No404_Options::sanitize( array( 'api_base' => '   ' ) );
-t_check( 'sadece bosluk da varsayilana doner', $clean['api_base'], 'https://no404.tr' );
+t_check( 'whitespace only also restores the default', $clean['api_base'], 'https://no404.tr' );
 
 // Kendi sunucusunda barindiran kullanici korunmali.
 $clean = No404_Options::sanitize( array( 'api_base' => 'https://no404.sirketim.com/' ) );
-t_check( 'kendi kurulumu ezilmez', $clean['api_base'], 'https://no404.sirketim.com' );
+t_check( 'a self-hosted install is not overwritten', $clean['api_base'], 'https://no404.sirketim.com' );
 
-// Gecersiz girdi varsayilani DEGIL, eski degeri korumali (sessizce tasima yapmayalim).
+// Invalid input must keep the PREVIOUS value, not fall back to the default —
+// no silent overwriting.
 $GLOBALS['wp_options']['no404_settings']['api_base'] = 'https://no404.sirketim.com';
 $clean = No404_Options::sanitize( array( 'api_base' => 'ftp://yanlis' ) );
-t_check( 'gecersiz URL eski degeri korur', $clean['api_base'], 'https://no404.sirketim.com' );
+t_check( 'an invalid URL keeps the previous value', $clean['api_base'], 'https://no404.sirketim.com' );
 $GLOBALS['wp_options']['no404_settings']['api_base'] = 'https://no404.tr';
 
-echo "\n=== Haric tutulan yollar ayristirmasi ===\n";
-$GLOBALS['wp_options']['no404_settings']['exclude_paths'] = "/kampanya\n eski-blog/ \n\n/gecici";
+echo "\n=== Excluded paths parsing ===\n";
+$GLOBALS['wp_options']['no404_settings']['exclude_paths'] = "/campaign\n old-blog/ \n\n/temporary";
 t_check(
-	'onekler normalize edildi',
+	'prefixes were normalised',
 	No404_Options::exclude_prefixes(),
-	array( '/kampanya', '/eski-blog', '/gecici' )
+	array( '/campaign', '/old-blog', '/temporary' )
 );
 
 echo "\n----------------------------------------\n";

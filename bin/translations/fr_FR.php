@@ -1,10 +1,10 @@
 <?php
 /**
- * Français (fr_FR) — catalogue de traduction. LA LANGUE SOURCE EST L’ANGLAIS.
+ * French (fr_FR) translation catalogue. THE SOURCE LANGUAGE IS ENGLISH.
  *
- * Vouvoiement, conformément à la traduction du cœur de WordPress en fr_FR.
- * Espaces insécables avant « : » « ! » « ? » et à l’intérieur des guillemets,
- * comme le veut la typographie française.
+ * Formal address ("vous"), matching the WordPress core fr_FR translation.
+ * French typography is respected: non-breaking spaces before " : ", " ! ",
+ * " ? " and inside guillemets.
  *
  * @package no404
  */

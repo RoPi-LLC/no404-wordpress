@@ -1,9 +1,9 @@
 <?php
 /**
- * Русский (ru_RU) — каталог перевода. ЯЗЫК ОРИГИНАЛА — АНГЛИЙСКИЙ.
+ * Russian (ru_RU) translation catalogue. THE SOURCE LANGUAGE IS ENGLISH.
  *
- * Обращение на «вы» со строчной буквы — как в переводе ядра WordPress на
- * ru_RU. Кавычки-ёлочки, тире — длинное (—).
+ * Polite "вы", lower case, matching the WordPress core ru_RU translation.
+ * Guillemets for quotes, em dash (—) for dashes.
  *
  * @package no404
  */

@@ -1,12 +1,12 @@
 <?php
 /**
- * Taşınabilir zip üretici — `zip` komutu Windows'ta bulunmadığı için.
+ * Portable zip builder — the `zip` command does not exist on Windows.
  *
- * Kullanım: php bin/zip.php <kaynak-dizin> <hedef.zip> <arşiv-kök-adı>
+ * Usage: php bin/zip.php <source-dir> <target.zip> <archive-root-name>
  */
 
 if ( $argc < 4 ) {
-	fwrite( STDERR, "Kullanım: php bin/zip.php <kaynak> <hedef.zip> <kök>\n" );
+	fwrite( STDERR, "Usage: php bin/zip.php <source> <target.zip> <root>\n" );
 	exit( 1 );
 }
 
@@ -14,11 +14,11 @@ list( , $source, $target, $root ) = $argv;
 
 $zip = new ZipArchive();
 if ( true !== $zip->open( $target, ZipArchive::CREATE | ZipArchive::OVERWRITE ) ) {
-	fwrite( STDERR, "Zip açılamadı: $target\n" );
+	fwrite( STDERR, "Could not open the zip: $target\n" );
 	exit( 1 );
 }
 
-/** Windows'ta realpath ters slash döner; arşiv yolları hep düz slash olmalı. */
+/** realpath returns backslashes on Windows; archive paths must always use forward slashes. */
 function no404_slashes( $path ) {
 	return str_replace( chr( 92 ), '/', $path );
 }
@@ -45,4 +45,4 @@ foreach ( $files as $file ) {
 
 $zip->close();
 
-echo "$count dosya paketlendi.\n";
+echo "$count files packaged.\n";

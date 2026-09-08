@@ -1,13 +1,13 @@
 <?php
 /**
- * Türkçe (tr_TR) çeviri katalogu — KAYNAK DİL İNGİLİZCEDİR.
+ * Turkish (tr_TR) translation catalogue. THE SOURCE LANGUAGE IS ENGLISH.
  *
- * WordPress.org (GlotPress) çevirileri İngilizce kaynaktan üretir; bu yüzden
- * koddaki dizeler İngilizce, yerelleştirmeler burada katalog olarak yaşar.
+ * WordPress.org (GlotPress) generates translations from the English source, so
+ * the strings in the code stay English and every localisation lives here.
  *
- * Yeni bir metin eklediğinizde `bin/translations/` altındaki HER dosyaya
- * karşılığını ekleyin — `bin/i18n.php` eksik ya da artık kullanılmayan kayıt
- * bulursa hata verip durur, katalog sessizce eksik üretilmez.
+ * When you add a new string, add its translation to EVERY file under
+ * `bin/translations/` — `bin/i18n.php` stops with an error on a missing or
+ * unused entry, so a catalogue is never silently emitted incomplete.
  *
  * @package no404
  */

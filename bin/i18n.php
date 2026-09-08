@@ -1,39 +1,41 @@
 <?php
 /**
- * Çeviri kataloglarını üretir.
+ * Builds the translation catalogues.
  *
- * Kullanım: php bin/i18n.php
+ * Usage: php bin/i18n.php
  *
- * KAYNAK DİL İNGİLİZCEDİR — eklentinin kurulum ekranı dahil varsayılan dili
- * budur. WordPress.org (GlotPress) çevirileri İngilizce kaynaktan üretir;
- * kaynak başka bir dilde olursa dizinin çeviri altyapısı çalışmaz. Diğer
- * diller koddan çıkarılıp `bin/translations/<locale>.php` içinde katalog
- * olarak yaşar; hangi dillerin üretileceğini `bin/locales.php` söyler.
+ * THE SOURCE LANGUAGE IS ENGLISH — it is the plugin's default language, setup
+ * screen included. WordPress.org (GlotPress) generates translations *from*
+ * English; with a source in any other language the directory's translation
+ * infrastructure does not work at all. Every other language is kept out of the
+ * code and lives as a catalogue in `bin/translations/<locale>.php`;
+ * `bin/locales.php` decides which locales get built.
  *
- * Üretilenler (hepsi `languages/` altında):
- *   - no404-auto-404-redirect.pot           → çevirmenler için şablon (msgstr boş)
- *   - no404-auto-404-redirect-<locale>.po   → katalog (okunabilir)
- *   - no404-auto-404-redirect-<locale>.mo   → katalog (WordPress bunu okur)
+ * What it produces (all under `languages/`):
+ *   - no404-auto-404-redirect.pot           → template for translators (empty msgstr)
+ *   - no404-auto-404-redirect-<locale>.po   → catalogue (human readable)
+ *   - no404-auto-404-redirect-<locale>.mo   → catalogue (what WordPress reads)
  *
- * Betik şunlardan biri olursa hata verip DURUR — katalog sessizce eksik
- * üretilmez: çevirisi olmayan metin, artık kodda bulunmayan kayıt, boş msgstr,
- * ya da kaynakla uyuşmayan `%s` / `%1$s` yer tutucusu.
+ * The script STOPS with an error — rather than quietly emitting an incomplete
+ * catalogue — on any of these: an untranslated string, an entry that no longer
+ * exists in the code, an empty msgstr, or a `%s` / `%1$s` placeholder that does
+ * not match the source.
  *
  * @package no404
  */
 
 $root = dirname( __DIR__ );
 
-/** Metin alanı — eklenti slug'ı ile AYNI olmak zorunda (WordPress.org kuralı). */
+/** Text domain — MUST equal the plugin slug (a WordPress.org rule). */
 const NO404_TEXT_DOMAIN = 'no404-auto-404-redirect';
 
-// ---------------------------------------------------------------- metinleri çıkar
+// ---------------------------------------------------------------- extract strings
 
 /**
- * Kaynak dosyalardan çevrilebilir metinleri toplar (token tabanlı, regex değil).
+ * Collects translatable strings from the source files (token-based, not regex).
  *
- * @param string $root Eklenti kökü.
- * @return array msgid => referans listesi
+ * @param string $root Plugin root.
+ * @return array msgid => list of references
  */
 function no404_extract( $root ) {
 	$funcs   = array( '__', '_e', 'esc_html__', 'esc_html_e', 'esc_attr__', 'esc_attr_e' );
@@ -46,7 +48,7 @@ function no404_extract( $root ) {
 		if ( 'php' !== strtolower( $file->getExtension() ) ) {
 			continue;
 		}
-		// Testler, üretim betikleri ve paket çıktısı katalogda yer almaz.
+		// Tests, build scripts and package output never appear in the catalogue.
 		if ( preg_match( '#/(tests|bin|dist)/#', $path ) ) {
 			continue;
 		}
@@ -82,7 +84,7 @@ function no404_extract( $root ) {
 			$raw   = $tokens[ $j ][1];
 			$value = substr( $raw, 1, -1 );
 			if ( "'" === $raw[0] ) {
-				// Tek tırnaklı literalde yalnızca \' ve \\ kaçışları geçerlidir.
+				// In a single-quoted literal only the \' and \\ escapes are meaningful.
 				$value = str_replace( array( "\\'", chr( 92 ) . chr( 92 ) ), array( "'", chr( 92 ) ), $value );
 			}
 
@@ -95,18 +97,18 @@ function no404_extract( $root ) {
 
 $strings = no404_extract( $root );$strings = no404_extract( $root );
 
-// ---------------------------------------------------------------- tutarlılık denetimi
+// ---------------------------------------------------------------- consistency checks
 
 /**
- * Bir katalogda eksik ya da fazla kayıt var mı?
+ * Does a catalogue have missing or leftover entries?
  *
- * Sessizce eksik katalog üretmektense durmak istiyoruz: WordPress çevirisi
- * bulunmayan metni İngilizce basar, yani hata KULLANICIYA hiç görünmez.
+ * We would rather stop than emit an incomplete catalogue: WordPress prints an
+ * untranslated string in English, so the mistake is NEVER visible to the user.
  *
- * @param string $locale       Yerel ayar kodu.
- * @param array  $catalog      msgid => çeviri.
- * @param array  $strings      Koddan çıkarılan msgid'ler.
- * @return bool Katalog tutarlı mı?
+ * @param string $locale       Locale code.
+ * @param array  $catalog      msgid => translation.
+ * @param array  $strings      msgids extracted from the code.
+ * @return bool Is the catalogue consistent?
  */
 function no404_check_catalog( $locale, array $catalog, array $strings ) {
 	$missing = array_diff( array_keys( $strings ), array_keys( $catalog ) );
@@ -120,19 +122,19 @@ function no404_check_catalog( $locale, array $catalog, array $strings ) {
 	}
 
 	if ( ! empty( $missing ) ) {
-		fwrite( STDERR, "[$locale] EKSİK ÇEVİRİ — bin/translations/$locale.php dosyasına ekleyin:\n" );
+		fwrite( STDERR, "[$locale] MISSING TRANSLATION — add it to bin/translations/$locale.php:\n" );
 		foreach ( $missing as $item ) {
 			fwrite( STDERR, "  - $item\n" );
 		}
 	}
 	if ( ! empty( $extra ) ) {
-		fwrite( STDERR, "[$locale] ARTIK KULLANILMAYAN ÇEVİRİ — bin/translations/$locale.php dosyasından silin:\n" );
+		fwrite( STDERR, "[$locale] UNUSED TRANSLATION — remove it from bin/translations/$locale.php:\n" );
 		foreach ( $extra as $item ) {
 			fwrite( STDERR, "  - $item\n" );
 		}
 	}
 	if ( ! empty( $empty ) ) {
-		fwrite( STDERR, "[$locale] BOŞ ÇEVİRİ — msgstr boşsa WordPress İngilizceye düşer:\n" );
+		fwrite( STDERR, "[$locale] EMPTY TRANSLATION — an empty msgstr makes WordPress fall back to English:\n" );
 		foreach ( $empty as $item ) {
 			fwrite( STDERR, "  - $item\n" );
 		}
@@ -142,14 +144,14 @@ function no404_check_catalog( $locale, array $catalog, array $strings ) {
 }
 
 /**
- * `%s`, `%1$s`, `%d` gibi yer tutucular çeviride korunmuş mu?
+ * Are placeholders such as `%s`, `%1$s` and `%d` preserved in the translation?
  *
- * Yer tutucu düşerse `sprintf()` çalışma anında uyarı verir ya da metni yanlış
- * kurar; bu tür bir hata yalnızca o dili kullanan kullanıcıda ortaya çıkar.
+ * If one is dropped, `sprintf()` warns at runtime or builds the wrong string —
+ * and that failure only ever shows up for users of that one language.
  *
- * @param string $locale  Yerel ayar kodu.
- * @param array  $catalog msgid => çeviri.
- * @return bool Yer tutucular tutuyor mu?
+ * @param string $locale  Locale code.
+ * @param array  $catalog msgid => translation.
+ * @return bool Do the placeholders line up?
  */
 function no404_check_placeholders( $locale, array $catalog ) {
 	$ok = true;
@@ -165,9 +167,9 @@ function no404_check_placeholders( $locale, array $catalog ) {
 
 		if ( $a !== $b ) {
 			$ok = false;
-			fwrite( STDERR, "[$locale] YER TUTUCU UYUŞMUYOR: \"$msgid\"\n" );
-			fwrite( STDERR, '          kaynak: ' . implode( ' ', $src[0] ) . "\n" );
-			fwrite( STDERR, '          çeviri: ' . implode( ' ', $dst[0] ) . "\n" );
+			fwrite( STDERR, "[$locale] PLACEHOLDER MISMATCH: \"$msgid\"\n" );
+			fwrite( STDERR, '          source:      ' . implode( ' ', $src[0] ) . "\n" );
+			fwrite( STDERR, '          translation: ' . implode( ' ', $dst[0] ) . "\n" );
 		}
 	}
 
@@ -181,14 +183,14 @@ $failed   = false;
 foreach ( $locales as $locale => $meta ) {
 	$file = __DIR__ . '/translations/' . $locale . '.php';
 	if ( ! is_file( $file ) ) {
-		fwrite( STDERR, "[$locale] KATALOG DOSYASI YOK: bin/translations/$locale.php\n" );
+		fwrite( STDERR, "[$locale] CATALOGUE FILE MISSING: bin/translations/$locale.php\n" );
 		$failed = true;
 		continue;
 	}
 
 	$catalog = require $file;
 	if ( ! is_array( $catalog ) ) {
-		fwrite( STDERR, "[$locale] KATALOG DİZİ DÖNDÜRMÜYOR: bin/translations/$locale.php\n" );
+		fwrite( STDERR, "[$locale] CATALOGUE DOES NOT RETURN AN ARRAY: bin/translations/$locale.php\n" );
 		$failed = true;
 		continue;
 	}
@@ -207,9 +209,9 @@ if ( $failed ) {
 	exit( 1 );
 }
 
-// ---------------------------------------------------------------- katalogları yaz
+// ---------------------------------------------------------------- write catalogues
 
-/** PO biçimi için kaçış. */
+/** Escaping for the PO format. */
 function no404_po_escape( $text ) {
 	return str_replace(
 		array( chr( 92 ), '"', "\n", "\t" ),
@@ -219,17 +221,17 @@ function no404_po_escape( $text ) {
 }
 
 /**
- * PO/POT başlığı.
+ * The PO/POT header.
  *
- * @param string $language Boşsa POT (şablon) başlığı üretilir.
- * @param string $plural   Bu dilin `Plural-Forms` tanımı.
+ * @param string $language Empty produces the POT (template) header.
+ * @param string $plural   This language's `Plural-Forms` definition.
  * @return string
  */
 function no404_po_header( $language, $plural ) {
 	$nl   = chr( 92 ) . 'n';
 	$out  = '# Copyright (C) ' . gmdate( 'Y' ) . " no404\n";
 	$out .= "# This file is distributed under the GPL-2.0-or-later license.\n";
-	$out .= "# ÜRETİLMİŞ DOSYA — elle düzenlemeyin, `php bin/i18n.php` çalıştırın.\n";
+	$out .= "# GENERATED FILE — do not edit by hand; run `php bin/i18n.php`.\n";
 	$out .= "msgid \"\"\nmsgstr \"\"\n";
 	$out .= "\"Project-Id-Version: no404 - Auto 404 Redirect 1.0.0{$nl}\"\n";
 	$out .= "\"Report-Msgid-Bugs-To: https://no404.tr{$nl}\"\n";
@@ -248,13 +250,13 @@ function no404_po_header( $language, $plural ) {
 }
 
 /**
- * Gettext MO ikili biçimi (little-endian). Hash tablosu yazılmaz — isteğe bağlıdır.
+ * The gettext MO binary format (little-endian). No hash table is written — it is optional.
  *
  * @param array $pairs msgid => msgstr
  * @return string
  */
 function no404_compile_mo( array $pairs ) {
-	ksort( $pairs ); // MO tablosu msgid'e göre sıralı olmalı.
+	ksort( $pairs ); // The MO table must be sorted by msgid.
 
 	$ids       = '';
 	$strs      = '';
@@ -274,12 +276,12 @@ function no404_compile_mo( array $pairs ) {
 	$ids_off  = $str_off + ( $count * 8 );
 	$strs_off = $ids_off + strlen( $ids );
 
-	$out  = pack( 'V', 0x950412de ); // Sihirli sayı.
-	$out .= pack( 'V', 0 );          // Revizyon.
+	$out  = pack( 'V', 0x950412de ); // Magic number.
+	$out .= pack( 'V', 0 );          // Revision.
 	$out .= pack( 'V', $count );
 	$out .= pack( 'V', $id_off );
 	$out .= pack( 'V', $str_off );
-	$out .= pack( 'V', 0 );          // Hash tablosu boyutu.
+	$out .= pack( 'V', 0 );          // Hash table size.
 	$out .= pack( 'V', $ids_off );
 
 	foreach ( $id_table as $entry ) {
@@ -293,12 +295,12 @@ function no404_compile_mo( array $pairs ) {
 }
 
 /**
- * Yazılan MO dosyasını geri okur.
+ * Reads a written MO file back.
  *
- * Bozuk bir MO WordPress'te sessizce yok sayılır (çeviri yüklenmez, hata da
- * çıkmaz), bu yüzden üretimden hemen sonra doğruluyoruz.
+ * WordPress ignores a corrupt MO silently (no translation loads, and no error is
+ * raised), so we verify each file immediately after writing it.
  *
- * @param string $path MO yolu.
+ * @param string $path Path to the MO file.
  * @return array msgid => msgstr
  */
 function no404_read_mo( $path ) {
@@ -328,8 +330,8 @@ function no404_read_mo( $path ) {
 $lang_dir = $root . '/languages/';
 $written  = array();
 
-// Şablon: msgstr'ler boş, çevirmenler ve translate.wordpress.org bunu kullanır.
-// Plural-Forms şablonda İngilizcenin (kaynak dilin) kuralıdır.
+// Template: msgstr entries stay empty; translators and translate.wordpress.org
+// consume this. Plural-Forms in the template is English's rule (the source language).
 $pot = no404_po_header( '', 'nplurals=2; plural=(n != 1);' );
 foreach ( $strings as $msgid => $refs ) {
 	$pot .= '#: ' . implode( ' ', $refs ) . "\n";
@@ -351,7 +353,7 @@ foreach ( $catalogs as $locale => $catalog ) {
 	$po_path = $lang_dir . NO404_TEXT_DOMAIN . '-' . $locale . '.po';
 	file_put_contents( $po_path, $po );
 
-	// MO'nun boş msgid'i başlıktır; Language ve Plural-Forms buradan okunur.
+	// The MO's empty msgid is the header; Language and Plural-Forms are read from it.
 	$mo_pairs = array(
 		'' => "Project-Id-Version: no404 - Auto 404 Redirect 1.0.0\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\nLanguage: $locale\nPlural-Forms: $plural\n",
 	);
@@ -366,13 +368,13 @@ foreach ( $catalogs as $locale => $catalog ) {
 	$expected = count( $mo_pairs );
 
 	if ( count( $readback ) !== $expected ) {
-		fwrite( STDERR, "[$locale] MO DOĞRULAMA BAŞARISIZ: " . count( $readback ) . " kayıt okundu, $expected bekleniyordu.\n" );
+		fwrite( STDERR, "[$locale] MO VERIFICATION FAILED: read " . count( $readback ) . " entries, expected $expected.\n" );
 		exit( 1 );
 	}
 
 	foreach ( $mo_pairs as $msgid => $msgstr ) {
 		if ( ! isset( $readback[ $msgid ] ) || $readback[ $msgid ] !== $msgstr ) {
-			fwrite( STDERR, "[$locale] MO DOĞRULAMA BAŞARISIZ: \"$msgid\" geri okunamadı.\n" );
+			fwrite( STDERR, "[$locale] MO VERIFICATION FAILED: could not read \"$msgid\" back.\n" );
 			exit( 1 );
 		}
 	}
@@ -381,7 +383,7 @@ foreach ( $catalogs as $locale => $catalog ) {
 	$written[] = 'languages/' . NO404_TEXT_DOMAIN . '-' . $locale . '.mo';
 }
 
-echo 'Katalog güncellendi ve doğrulandı: ' . count( $strings ) . ' metin × ' . count( $catalogs ) . " dil\n";
+echo 'Catalogues rebuilt and verified: ' . count( $strings ) . ' strings x ' . count( $catalogs ) . " locales\n";
 foreach ( $written as $file ) {
 	echo "  $file\n";
 }

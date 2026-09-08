@@ -1,19 +1,19 @@
 <?php
 /**
- * no404 — platform-bağımsız çekirdek (davranış sözleşmesi).
+ * no404 — the platform-independent core (the behaviour contract).
  *
- * SINIF GÖVDESİ WordPress API'sine BAĞLI DEĞİLDİR: platformun HTTP ve önbellek
- * katmanları birer arayüzün (`No404_Http_Interface`, `No404_Cache_Interface`)
- * arkasındadır. `tests/test-core.php` bu sayede WordPress olmadan çalışır ve
- * eşleştirme/önbellek/301-302 mantığını izole doğrular. Buraya `wp_*` çağrısı
- * EKLEME — platforma özel her şey adaptörlere ait.
+ * THE CLASS BODY IS NOT TIED TO THE WordPress API: the platform's HTTP and cache
+ * layers sit behind interfaces (`No404_Http_Interface`, `No404_Cache_Interface`).
+ * That is what lets `tests/test-core.php` run without WordPress and verify the
+ * matching / caching / 301-302 logic in isolation. DO NOT add `wp_*` calls here —
+ * anything platform-specific belongs in an adapter.
  *
- * Sorumlulukları:
- *   - İstek kurma ve kısa zaman aşımı (fail-open)
- *   - Yerel önbellek (kota koruması, negatifler dahil)
- *   - Statik/yönetim yollarını hiç sormama (kara liste)
- *   - 301/302 kararı (source + score)
- *   - Hedef doğrulama: açık yönlendirme ve döngü koruması
+ * Responsibilities:
+ *   - Building the request, with a short timeout (fail-open)
+ *   - The local cache (quota protection, negatives included)
+ *   - Never asking about static/admin paths (the blacklist)
+ *   - The 301/302 decision (source + score)
+ *   - Target validation: open-redirect and loop protection
  *
  * @package no404
  */
@@ -24,35 +24,35 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class No404_Client {
 
-	/** Önbellek şeması sürümü — yapı değişirse artır, eski kayıtlar es geçilir. */
+	/** Cache schema version — bump it when the shape changes; old entries are skipped. */
 	const CACHE_SCHEMA = 'v1';
 
-	/** Bu skorun üstündeki CATALOG eşleşmeleri kalıcı (301) sayılır. */
+	/** CATALOG matches above this score count as permanent (301). */
 	const HIGH_CONFIDENCE_SCORE = 0.5;
 
-	/** Varsayılan zaman aşımı (ms). Mağazanın 404 sayfasını bekletmeyecek kadar kısa. */
+	/** Default timeout (ms). Short enough not to hold up the store's 404 page. */
 	const DEFAULT_TIMEOUT_MS = 1500;
 
-	/** Varsayılan sonuç ömrü (sn). */
+	/** Default result lifetime (seconds). */
 	const DEFAULT_CACHE_TTL = 3600;
 
-	/** API erişilemezken yeniden denemeden önce beklenecek süre (sn). */
+	/** How long to wait before retrying while the API is unreachable (seconds). */
 	const OUTAGE_TTL = 60;
 
-	/** Kota/limit dolduğunda beklenecek süre (sn). Aylık kota tükendiyse boşuna sormayalım. */
+	/** Wait after a quota/limit hit (seconds). If the monthly quota is gone, stop asking. */
 	const QUOTA_TTL = 300;
 
-	/** Yapılandırma hatasında (geçersiz anahtar, pasif abonelik) bekleme (sn). */
+	/** Wait after a configuration error — invalid key, inactive subscription (seconds). */
 	const CONFIG_ERROR_TTL = 300;
 
-	/** API'nin kabul ettiği azami yol uzunluğu (ingestHitSchema ile aynı). */
+	/** Maximum path length the API accepts (matches ingestHitSchema). */
 	const MAX_PATH_LENGTH = 2048;
 
-	/** Devre kesici (circuit breaker) anahtarı. */
+	/** Circuit breaker key. */
 	const OUTAGE_KEY = 'outage';
 
 	/**
-	 * Katalogda karşılığı olmayan, boşa kota yakan uzantılar.
+	 * Extensions that have no catalogue counterpart and would just burn quota.
 	 *
 	 * @var string[]
 	 */
@@ -66,7 +66,7 @@ class No404_Client {
 	);
 
 	/**
-	 * Hiç sorulmayacak yol önekleri. Platform sarmalayıcısı kendi öneklerini ekler.
+	 * Path prefixes that are never asked about. The platform wrapper adds its own.
 	 *
 	 * @var string[]
 	 */
@@ -81,7 +81,7 @@ class No404_Client {
 	/** @var No404_Cache_Interface */
 	protected $cache;
 
-	/** @var string API kökü, sondaki slash olmadan. */
+	/** @var string API base, without a trailing slash. */
 	protected $api_base = '';
 
 	/** @var string */
@@ -93,19 +93,19 @@ class No404_Client {
 	/** @var int */
 	protected $cache_ttl = self::DEFAULT_CACHE_TTL;
 
-	/** @var bool Tüm yönlendirmeleri 301 yap (varsayılan: kapalı). */
+	/** @var bool Send every redirect as a 301 (default: off). */
 	protected $force_301 = false;
 
-	/** @var string[] Yönlendirme hedefinde izin verilen host'lar (küçük harf). */
+	/** @var string[] Hosts allowed as a redirect target (lower case). */
 	protected $allowed_hosts = array();
 
-	/** @var string İstemci kimliği (User-Agent). */
+	/** @var string Client identity (User-Agent). */
 	protected $user_agent = 'no404-plugin';
 
 	/**
 	 * @param array                 $config Ayarlar.
-	 * @param No404_Http_Interface  $http   HTTP adaptörü.
-	 * @param No404_Cache_Interface $cache  Önbellek adaptörü.
+	 * @param No404_Http_Interface  $http   HTTP adapter.
+	 * @param No404_Cache_Interface $cache  Cache adapter.
 	 */
 	public function __construct( array $config, No404_Http_Interface $http, No404_Cache_Interface $cache ) {
 		$this->http  = $http;
@@ -149,21 +149,22 @@ class No404_Client {
 		}
 	}
 
-	/** Eklenti çalışabilir durumda mı (anahtar + kök URL var mı)? */
+	/** Is the plugin operable (does it have a key and a base URL)? */
 	public function is_configured() {
 		return '' !== $this->api_key && '' !== $this->api_base;
 	}
 
 	/**
-	 * Bir 404 yolunu çözer.
+	 * Resolves a 404 path.
 	 *
-	 * FAIL-OPEN: hiçbir koşulda exception fırlatmaz. no404 yavaşlarsa, düşerse
-	 * veya bozuk yanıt dönerse `null` döner ve mağaza kendi 404'ünü render eder.
+	 * FAIL-OPEN: never throws under any circumstance. If no404 is slow, down, or
+	 * returns something malformed, this returns `null` and the store renders its
+	 * own 404 page.
 	 *
-	 * @param string $path     404 dönen yol.
-	 * @param string $referrer Ziyaretçinin geldiği adres (opsiyonel).
+	 * @param string $path     The path that returned 404.
+	 * @param string $referrer Where the visitor came from (optional).
 	 *
-	 * @return array|null found/redirect/score/source, ya da yönlendirme yoksa null.
+	 * @return array|null found/redirect/score/source, or null when there is no redirect.
 	 */
 	public function resolve( $path, $referrer = '' ) {
 		try {
@@ -185,7 +186,8 @@ class No404_Client {
 				return $cached;
 			}
 
-			// Devre kesici: API erişilemez/kota dolu iken her 404'te tekrar denemeyiz.
+			// Circuit breaker: while the API is unreachable or out of quota, do not
+			// retry on every single 404.
 			if ( null !== $this->cache->get( self::OUTAGE_KEY ) ) {
 				return null;
 			}
@@ -199,21 +201,21 @@ class No404_Client {
 			return $this->handle_response( $response, $key );
 		} catch ( Exception $e ) {
 			return null;
-		} catch ( Throwable $e ) { // PHP 7+ fatal koruması.
+		} catch ( Throwable $e ) { // PHP 7+ fatal-error guard.
 			return null;
 		}
 	}
 
 	/**
-	 * HTTP yanıtını sonuca çevirir ve gerekli önbellekleri yazar.
+	 * Turns an HTTP response into a result and writes the cache entries it needs.
 	 *
-	 * @param array  $response HTTP adaptörü çıktısı.
-	 * @param string $key      Bu yola ait önbellek anahtarı.
+	 * @param array  $response Output of the HTTP adapter.
+	 * @param string $key      The cache key for this path.
 	 *
 	 * @return array|null
 	 */
 	protected function handle_response( array $response, $key ) {
-		// Taşıma hatası (timeout, DNS, TLS) → devre kes, mağazayı bekletme.
+		// Transport failure (timeout, DNS, TLS) → trip the breaker, do not stall the store.
 		if ( empty( $response['ok'] ) ) {
 			$this->cache->set( self::OUTAGE_KEY, 1, self::OUTAGE_TTL );
 			return null;
@@ -222,12 +224,12 @@ class No404_Client {
 		$status = isset( $response['status'] ) ? (int) $response['status'] : 0;
 
 		if ( 429 === $status ) {
-			// Rate limit veya aylık kota. İkisi de kısa vadede değişmez.
+			// Rate limit or monthly quota. Neither changes in the short term.
 			$this->cache->set( self::OUTAGE_KEY, 1, self::QUOTA_TTL );
 			return null;
 		}
 		if ( 403 === $status || 404 === $status ) {
-			// Geçersiz anahtar, duraklatılmış site, pasif abonelik → yapılandırma sorunu.
+			// Invalid key, paused site, inactive subscription → a configuration problem.
 			$this->cache->set( self::OUTAGE_KEY, 1, self::CONFIG_ERROR_TTL );
 			return null;
 		}
@@ -239,7 +241,7 @@ class No404_Client {
 		$payload = $this->decode( isset( $response['body'] ) ? $response['body'] : '' );
 
 		if ( 200 !== $status || null === $payload || empty( $payload['success'] ) ) {
-			// 422 (geçersiz yol) dahil: bu YOL için tekrar sormanın anlamı yok.
+			// Including 422 (invalid path): there is no point asking about this PATH again.
 			$this->cache->set( $key, $this->empty_result(), $this->cache_ttl );
 			return null;
 		}
@@ -251,19 +253,19 @@ class No404_Client {
 			'source'   => isset( $payload['source'] ) && is_string( $payload['source'] ) ? $payload['source'] : 'NONE',
 		);
 
-		// Negatif sonuç da cache'lenir — kotayı asıl bu korur.
+		// Negative results are cached too — this is what actually protects the quota.
 		$this->cache->set( $key, $result, $this->cache_ttl );
 
 		return $result;
 	}
 
 	/**
-	 * Yönlendirme HTTP durum kodunu belirler.
+	 * Decides the redirect's HTTP status code.
 	 *
-	 * 301 tarayıcıda ve Google'da KALICI olarak cache'lenir; tahmine dayalı bir
-	 * eşleşmeyi 301 vermek, katalog sonradan düzelse bile geri alınamaz.
+	 * A 301 is cached PERMANENTLY by browsers and by Google; issuing one for a
+	 * speculative match cannot be undone, even if the catalogue is corrected later.
 	 *
-	 * @param array $result resolve() çıktısı.
+	 * @param array $result Output of resolve().
 	 * @return int 301 veya 302.
 	 */
 	public function decide_status( array $result ) {
@@ -275,29 +277,29 @@ class No404_Client {
 		$score  = isset( $result['score'] ) ? (float) $result['score'] : 0.0;
 
 		if ( 'REDIRECT' === $source ) {
-			return 301; // İnsan tanımlamış, kesin.
+			return 301; // A human defined it; it is certain.
 		}
 		if ( 'CATALOG' === $source && $score >= self::HIGH_CONFIDENCE_SCORE ) {
 			return 301;
 		}
 
-		return 302; // Düşük skorlu CATALOG ve FALLBACK → geri alınabilir kalsın.
+		return 302; // Low-scoring CATALOG and FALLBACK → keep it reversible.
 	}
 
 	/**
-	 * Yönlendirme hedefini doğrular: açık yönlendirme ve döngü koruması.
+	 * Validates the redirect target: open-redirect and loop protection.
 	 *
-	 * @param string $redirect     API'nin döndüğü hedef.
-	 * @param string $current_path Şu anki (404 dönen) yol, normalize edilmiş.
+	 * @param string $redirect     The target returned by the API.
+	 * @param string $current_path The current (404) path, normalised.
 	 *
-	 * @return string Güvenli URL, ya da reddedilirse boş string.
+	 * @return string A safe URL, or an empty string if it is rejected.
 	 */
 	public function validate_target( $redirect, $current_path ) {
 		if ( ! is_string( $redirect ) || '' === trim( $redirect ) ) {
 			return '';
 		}
 
-		// Başlık enjeksiyonu: kontrol karakterleri asla geçmez.
+		// Header injection: control characters never get through.
 		if ( preg_match( '/[\x00-\x1F\x7F]/', $redirect ) ) {
 			return '';
 		}
@@ -312,14 +314,14 @@ class No404_Client {
 			return '';
 		}
 
-		// Şemasız/host'suz göreli hedef → kendi sitemiz kabul edilir.
+		// A relative target with no scheme or host is taken to be our own site.
 		if ( empty( $parts['host'] ) ) {
-			// "//evil.com" protokol-göreli; göreli olmayan girdiler de reddedilir.
+			// "//evil.com" is protocol-relative; non-relative input is rejected too.
 			if ( 0 !== strpos( $redirect, '/' ) || 0 === strpos( $redirect, '//' ) ) {
 				return '';
 			}
 			if ( $this->normalize_path( $redirect ) === $current_path ) {
-				return ''; // Döngü.
+				return ''; // Loop.
 			}
 			return $redirect;
 		}
@@ -334,7 +336,7 @@ class No404_Client {
 			return '';
 		}
 
-		// Döngü: izinli host üzerinde aynı yola yönlendirme.
+		// Loop: a redirect to the same path on an allowed host.
 		if ( $this->normalize_path( isset( $parts['path'] ) ? $parts['path'] : '/' ) === $current_path ) {
 			return '';
 		}
@@ -343,9 +345,9 @@ class No404_Client {
 	}
 
 	/**
-	 * Bu yol hiç sorulmamalı mı?
+	 * Should this path never be asked about?
 	 *
-	 * @param string $path Normalize edilmiş yol.
+	 * @param string $path The normalised path.
 	 * @return bool
 	 */
 	public function is_ignored_path( $path ) {
@@ -369,33 +371,33 @@ class No404_Client {
 	}
 
 	/**
-	 * URL'yi bileşenlerine ayırır.
+	 * Splits a URL into its components.
 	 *
-	 * WordPress `parse_url()` yerine `wp_parse_url()` ister: eski PHP sürümleri
-	 * şemasız (`//host/yol`) girdilerde tutarsız sonuç veriyordu, wp_parse_url
-	 * bunu normalleştirir.
+	 * WordPress wants `wp_parse_url()` rather than `parse_url()`: older PHP versions
+	 * gave inconsistent results for scheme-less input (`//host/path`), and
+	 * wp_parse_url normalises that away.
 	 *
-	 * Sarmalayıcının tek sebebi `tests/test-core.php`: çekirdek, WordPress
-	 * yüklenmeden de çalışabilmeli. Test kendi `wp_parse_url` sahtesini tanımlar,
-	 * yani burada yedek yola gerek yok — fonksiyon her koşulda vardır.
+	 * The only reason for the wrapper is `tests/test-core.php`: the core must run
+	 * without WordPress loaded. The test defines its own `wp_parse_url` stub, so no
+	 * fallback is needed here — the function always exists.
 	 *
-	 * @param string $url Ayrıştırılacak URL.
-	 * @return array|false|null Bileşenler, ya da ayrıştırılamadıysa false/null.
+	 * @param string $url The URL to parse.
+	 * @return array|false|null The components, or false/null when parsing fails.
 	 */
 	private static function parse_url_parts( $url ) {
 		return wp_parse_url( $url );
 	}
 
 	/**
-	 * Yolu kanonik biçime getirir.
+	 * Brings a path into canonical form.
 	 *
-	 * no404 sunucusundaki `cleanPath` ile AYNI kuralları uygular; böylece yerel
-	 * önbellek anahtarı ile sunucunun gördüğü yol örtüşür. Sorgu dizesi atılır —
-	 * sunucu zaten yalnızca `pathname` alıyor, tutarsak `?utm_source=...`
-	 * yüzünden önbellek parçalanır ve boşuna kota harcanır.
+	 * Applies the SAME rules as `cleanPath` on the no404 server, so the local cache
+	 * key and the path the server sees line up. The query string is discarded — the
+	 * server only takes the `pathname` anyway, and keeping `?utm_source=...` would
+	 * fragment the cache and burn quota for nothing.
 	 *
 	 * @param string $raw Ham yol veya tam URL.
-	 * @return string "/" ile başlayan yol, ya da boş string.
+	 * @return string A path starting with "/", or an empty string.
 	 */
 	public function normalize_path( $raw ) {
 		$raw = (string) $raw;
@@ -411,10 +413,10 @@ class No404_Client {
 			$raw    = ( is_array( $parsed ) && isset( $parsed['path'] ) ) ? $parsed['path'] : '/';
 		}
 
-		// Sorgu ve fragment at.
+		// Drop the query string and the fragment.
 		$raw = substr( $raw, 0, strcspn( $raw, '?#' ) );
 
-		// Ters slash'ı slash say (WHATWG URL http(s) şemasında böyle davranır).
+		// Treat a backslash as a slash (this is what the WHATWG URL spec does for http(s)).
 		$raw = str_replace( '\\', '/', $raw );
 
 		if ( '' === $raw ) {
@@ -433,9 +435,10 @@ class No404_Client {
 	}
 
 	/**
-	 * Ayar ekranındaki "bağlantıyı test et" için tanılama çağrısı.
+	 * Diagnostic call behind "test the connection" on the settings screen.
 	 *
-	 * Önbelleği ve devre kesiciyi ATLAR — kullanıcı gerçek durumu görmeli.
+	 * Deliberately BYPASSES the cache and the circuit breaker — the user needs to
+	 * see the real state.
 	 *
 	 * @param string $path Test edilecek yol.
 	 * @return array code/status/found/redirect/score/source/detail
@@ -462,7 +465,7 @@ class No404_Client {
 
 		$response = $this->http->get(
 			$this->build_url( $this->normalize_path( $path ), '' ),
-			max( 5000, $this->timeout_ms ), // Testte kullanıcı bekleyebilir.
+			max( 5000, $this->timeout_ms ), // During a test the user can afford to wait.
 			$this->user_agent
 		);
 
@@ -510,9 +513,9 @@ class No404_Client {
 	}
 
 	/**
-	 * İstek URL'sini kurar.
+	 * Builds the request URL.
 	 *
-	 * @param string $path     Normalize edilmiş yol.
+	 * @param string $path     The normalised path.
 	 * @param string $referrer Referrer.
 	 * @return string
 	 */
@@ -528,16 +531,16 @@ class No404_Client {
 	}
 
 	/**
-	 * Yol için önbellek anahtarı. API anahtarı değişirse eski kayıtlar düşer.
+	 * Cache key for a path. Changing the API key drops the old entries.
 	 *
-	 * @param string $path Normalize edilmiş yol.
+	 * @param string $path The normalised path.
 	 * @return string
 	 */
 	protected function cache_key( $path ) {
 		return self::CACHE_SCHEMA . ':' . substr( md5( $this->api_key ), 0, 8 ) . ':' . md5( $path );
 	}
 
-	/** @return array Eşleşme bulunamadı sonucu (negatif önbellek için). */
+	/** @return array The "no match found" result (used for negative caching). */
 	protected function empty_result() {
 		return array(
 			'found'    => false,
@@ -548,9 +551,9 @@ class No404_Client {
 	}
 
 	/**
-	 * JSON çözer; bozuk gövde asla exception'a dönüşmez.
+	 * Decodes JSON; a malformed body never turns into an exception.
 	 *
-	 * @param string $body Ham gövde.
+	 * @param string $body The raw body.
 	 * @return array|null
 	 */
 	protected function decode( $body ) {
