@@ -1,5 +1,7 @@
 # no404 – Auto 404 Redirect
 
+![no404 – Auto 404 Redirect: turn 404s into opportunities. A visitor requests a page that no longer exists; instead of a "404 Page Not Found" screen they are sent, with a real server-side 301/302 redirect, to the most relevant live product page.](screen/no404tr.png)
+
 **Send visitors who hit a 404 to the closest matching live URL on your site — with a real server-side 301.**
 
 When you delete a product, change a permalink or migrate a site, the old URLs keep getting traffic for months. Visitors land on an empty 404 page and Google throws away the link equity those URLs had earned.
