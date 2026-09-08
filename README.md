@@ -1,305 +1,229 @@
-# no404 – Auto 404 Redirect (WordPress eklentisi)
+# no404 – Auto 404 Redirect
 
-404'e düşen ziyaretçiyi, no404 kataloğundaki en uygun adrese **sunucu tarafında
-gerçek bir 301/302 ile** yönlendirir.
+**Send visitors who hit a 404 to the closest matching live URL on your site — with a real server-side 301.**
 
-Kullanıcıya dönük anlatım: [readme.txt](readme.txt) (WordPress.org biçimi).
-Bu dosya geliştiriciler içindir.
+When you delete a product, change a permalink or migrate a site, the old URLs keep getting traffic for months. Visitors land on an empty 404 page and Google throws away the link equity those URLs had earned.
+
+Most redirect plugins ask you to fix this by hand: one rule per broken URL. That does not scale past a few dozen. **no404 works the other way around** — it keeps a synchronised index of the URLs your site actually has, and when a request 404s it finds the closest match automatically. You write no rules.
+
+- **WordPress.org:** [wordpress.org/plugins/no404-auto-404-redirect](https://wordpress.org/plugins/no404-auto-404-redirect/)
+- **Latest release:** [github.com/no404app/no404-wordpress/releases/latest](https://github.com/no404app/no404-wordpress/releases/latest)
+- **Service & account:** [no404.tr](https://no404.tr)
 
 ---
 
-## Neden eklenti (snippet neden yetmiyor)
+## Why a plugin, and not a JavaScript snippet
 
-|  | JS snippet | Bu eklenti |
+no404 can also be wired up with a snippet in your 404 template. That works everywhere, but it cannot do the one thing that actually matters:
+
+| | JS snippet | This plugin |
 | --- | --- | --- |
-| Yönlendirme türü | `location.replace` — HTTP durumu **404 kalır** | Gerçek **301/302** |
-| SEO | Google 404 görür, link değeri aktarılmaz | Link değeri hedefe aktarılır |
-| Botlar | JS çalıştırmayan bot yönlenmez | Yönlenir |
-| Kurulum | Temaya elle kod yapıştırma | Eklentiyi kur, anahtarı gir |
-| API anahtarı | Sayfa kaynağında **görünür** | Yalnızca sunucuda |
+| Redirect type | `location.replace` — the HTTP status **stays 404** | A real **301 / 302** |
+| SEO | Google sees a 404; link equity is lost | Link equity passes to the target |
+| Crawlers | Bots that do not run JS are never redirected | Redirected |
+| Setup | Paste code into your theme | Install, paste your key |
+| API key | **Visible** in the page source | Server-side only |
 
-Eklentinin varlık sebebi **301**'dir. Sunucu tarafında yapılmayacaksa eklenti
-yazmanın anlamı yoktur.
+The reason this plugin exists is the **301**. If it were not done server-side, there would be no point writing it.
 
 ---
 
-## Mimari
+## Requirements
 
-```
-no404.php                       bootstrap: sabitler, wiring, multisite bağlamı
-includes/
-  interface-no404-http.php      HTTP taşıma sözleşmesi
-  interface-no404-cache.php     önbellek sözleşmesi
-  class-no404-client.php        ÇEKİRDEK — davranış sözleşmesi (SAF PHP)
-  class-no404-wp-http.php       wp_remote_get adaptörü
-  class-no404-wp-cache.php      transient adaptörü
-  class-no404-options.php       ayar deposu: varsayılan, sanitize, maskeleme
-  class-no404-redirector.php    template_redirect kancası
-  class-no404-admin.php         Ayarlar → no404 + bağlantı testi (AJAX)
-assets/admin.js                 bağlantı testi (bağımlılıksız)
-languages/                      .pot + 7 dil (-tr_TR/-de_DE/-fr_FR/-es_ES/-ru_RU/-hi_IN/-ar)
-tests/test-core.php             çekirdek davranış testleri (WordPress gerekmez)
-uninstall.php                   option + transient temizliği (multisite dahil)
-```
-
-### `No404_Client` — dokunurken dikkat
-
-`includes/class-no404-client.php` WordPress API'sine **bağlı değildir**: HTTP ve
-önbellek birer arayüzün (`No404_Http_Interface`, `No404_Cache_Interface`)
-arkasındadır, WordPress uygulamaları `class-no404-wp-*.php` içinde durur.
-Buraya `wp_*` çağrısı **ekleme** — platforma özel her şey adaptörlere gider.
-
-Bunun karşılığı `tests/test-core.php`: eşleştirme, önbellek, kota koruması ve
-301/302 kararı WordPress hiç yüklenmeden, sahte HTTP/cache ile sınanıyor. Tek
-istisna `wp_parse_url` — test onun bir satırlık sahtesini tanımlar. Çekirdeğe
-her `wp_*` çağrısı eklendiğinde o test ya kırılır ya da bir sahte daha ister;
-sınırın kaymadığını böyle görüyoruz.
-
-Çekirdeğin sorumlulukları:
-
-| Sorumluluk | Yöntem |
+| | |
 | --- | --- |
-| İstek + kısa zaman aşımı (fail-open) | `resolve()` |
-| Yerel önbellek, negatifler dahil | `resolve()` + `cache_key()` |
-| Devre kesici (API düştüğünde) | `handle_response()` |
-| Statik/yönetim yollarını hiç sormama | `is_ignored_path()` |
-| 301/302 kararı | `decide_status()` |
-| Açık yönlendirme + döngü koruması | `validate_target()` |
-| Sunucuyla aynı yol kanonikleştirmesi | `normalize_path()` |
-| Ayar ekranı tanılaması | `ping()` |
+| WordPress | 6.0 or newer |
+| PHP | 7.4 or newer |
+| Account | A free [no404](https://no404.tr) account and an API key |
+
+The matching engine runs as a hosted service, so an account is required. The free plan covers 1,000 lookups per month. See [What is sent to the service](#what-is-sent-to-the-service) for exactly what leaves your server.
+
+## Installation
+
+**From WordPress.org**
+Plugins → Add New → search for *no404*, then Install and Activate.
+
+**From the ZIP**
+1. Download the latest release ZIP.
+2. Plugins → Add New → **Upload Plugin** → choose the file → Install → Activate.
+
+**Then, in either case**
+1. Go to **Settings → no404**.
+2. Paste the API key from the site settings page of your no404 dashboard.
+3. Leave *Apply no404 redirects on pages that are not found* ticked.
+4. Press **Test the connection** to confirm it works.
+
+That is the whole setup. There is nothing to add to your theme.
 
 ---
 
-## Davranış sözleşmesi
+## How it works
 
-### Fail-open — pazarlık konusu değil
+```
+Visitor requests /old-product
+        │
+        ▼
+WordPress decides the request is a 404
+        │
+        ▼
+template_redirect (priority 9999 — after Yoast, Rank Math, Redirection)
+        │
+        ├─ Static file or admin path?  ──────────────► do nothing
+        ├─ Not a GET/HEAD request?     ──────────────► do nothing
+        ├─ Already in the local cache? ──────────────► use the cached answer
+        │
+        ▼
+Ask no404: GET /api/v1/resolve/{key}?path=/old-product
+        │  (1.5 s timeout, failures are swallowed)
+        ▼
+Validate the target: same-site host, no loop, no control characters
+        │
+        ▼
+wp_safe_redirect( $target, 301|302 )  +  X-Redirect-By: no404
+```
 
-no404 yavaşlarsa, düşerse veya bozuk yanıt dönerse `resolve()` **`null`** döner
-ve mağaza kendi 404 sayfasını normal şekilde render eder. `resolve()` hiçbir
-koşulda exception fırlatmaz (`Throwable` dahil yakalanır).
+If anything goes wrong at any step — the service is slow, down, or returns something unexpected — the plugin does nothing and WordPress renders your own 404 page as usual.
 
-Ek olarak bir **devre kesici** vardır: taşıma hatası veya 5xx sonrası 60 saniye,
-429 (kota/limit) veya 403/404 (yapılandırma) sonrası 300 saniye boyunca hiç
-istek gönderilmez. Böylece no404 kesintisi mağazanın her 404'üne zaman aşımı
-maliyeti bindirmez.
+### 301 or 302?
 
-### Kota koruması
+Not every match deserves a permanent redirect. Browsers and Google cache a 301 forever, and you cannot take it back.
 
-Paket limitleri **aylık olay sayısına** bağlıdır, yani bu doğrudan müşterinin
-faturasıdır.
-
-* Sonuçlar varsayılan **1 saat** önbelleklenir (`set_transient`).
-* **Negatif sonuçlar da** önbelleklenir — aksi hâlde eşleşmeyen bir adres her
-  istekte kota harcardı.
-* **Sorgu dizesi atılır.** Sunucu zaten `pathname` alıyor; `?utm_source=…`
-  tutulsaydı aynı sayfa onlarca ayrı önbellek satırı ve onlarca olay üretirdi.
-* Kara listedeki yollar (statik uzantılar, `/wp-admin`, `/wp-json` …) API'ye
-  **hiç** sorulmaz.
-
-Önbellek geçersizleştirme **nesil sayacı** ile yapılır (`no404_cache_generation`
-option'ı artırılır), `DELETE ... LIKE` ile değil: Redis/Memcached kurulu bir
-sitede transient'lar veritabanında durmaz ve LIKE sorgusu hiçbir şey silmez.
-
-### 301 / 302 kararı
-
-| Kaynak | Skor | Durum |
+| Match source | Score | Status |
 | --- | --- | --- |
-| `REDIRECT` (elle tanımlı) | — | **301** |
-| `CATALOG` | ≥ 0.5 | **301** |
+| `REDIRECT` — a rule you defined by hand | — | **301** |
+| `CATALOG` — matched against your URL index | ≥ 0.5 | **301** |
 | `CATALOG` | < 0.5 | 302 |
-| `FALLBACK` | — | 302 |
+| `FALLBACK` — a guess | — | 302 |
 
-301 tarayıcıda ve Google'da kalıcı önbelleklenir; tahmine dayalı bir eşleşmeyi
-301 vermek katalog sonradan düzelse bile geri alınamaz. Ayarlardaki "tüm
-eşleşmeleri 301 gönder" seçeneği varsayılan olarak **kapalıdır**.
+There is a *Send every match as a 301* option in the settings. It is **off by default**, and you should only turn it on if you are confident your catalogue is complete.
 
-### Güvenlik
+### Your site never waits
 
-* **API anahtarı sayfaya asla basılmaz.** Ayar ekranında `password` tipi input,
-  kayıttan sonra yalnızca maskeli gösterim (`••••••••` + son 4 hane). Alan boş
-  veya maskeli gönderilirse mevcut anahtar korunur.
-* **Açık yönlendirme koruması:** hedefin host'u izinli listede olmalı
-  (`home_url` + `site_url` host'ları, www/non-www varyantlarıyla). Ayrıca
-  WordPress'in kendi `wp_validate_redirect()` süzgecinden geçirilir.
-  `//evil.com`, `javascript:`, `data:` reddedilir.
-* **Başlık enjeksiyonu:** hedefte kontrol karakteri varsa reddedilir.
-* **Döngü koruması:** normalize edilmiş hedef, mevcut yola eşitse yönlendirme
-  yapılmaz. Zincir yok — istek başına tek yönlendirme, ardından `exit`.
-* Sunucudan sunucuya çağrıda `Origin` başlığı gitmez, dolayısıyla no404'ün
-  origin kilidi devreye girmez. Anahtarı koruyan tek şey **gizliliği** ve rate
-  limit'tir.
+The lookup has a **1.5 second timeout** and every failure is swallowed. On top of that there is a **circuit breaker**: after a transport error or a 5xx the plugin stops asking for 60 seconds; after a 429 (quota) or a 403/404 (configuration) it stops for 300 seconds. So an outage on our side never puts a timeout cost on every 404 your site serves.
 
-### Diğer eklentilerle sıra
+### Quota friendly by design
 
-`template_redirect` önceliği **9999**. Yoast SEO, Rank Math ve Redirection'ın
-kendi yönlendirme tabloları önce çalışır; onlar bir eşleşme bulup yönlendirdiyse
-buraya hiç gelinmez. no404 **son çaredir**.
+Plan limits are based on monthly event count, so this is your bill.
+
+- Results are cached locally for **one hour**, including *no match found* — a bot hammering the same dead URL 200 times a day costs you one lookup, not 200.
+- **Query strings are stripped.** Keeping `?utm_source=…` would turn one page into dozens of separate cache entries and dozens of billed events.
+- Static files (`.css`, `.js`, `.png` …) and admin paths (`/wp-admin`, `/wp-json` …) are **never** sent to the service.
+
+---
+
+## Settings
+
+**Settings → no404**
+
+| Setting | Default | What it does |
+| --- | --- | --- |
+| Apply no404 redirects | On | The master switch. |
+| no404 address | `https://no404.tr` | Only change this if you host no404 yourself. |
+| API key | — | Stored server-side; shown masked after saving. |
+| Send every match as a 301 | Off | Turns speculative 302s into permanent 301s. |
+| Cache lifetime | 3600 s | Min 60, max 604800 (7 days). Shorter means more quota used. |
+| Timeout | 1500 ms | After this the request is dropped and your 404 page is shown. |
+| Excluded paths | — | One path prefix per line; never sent to the service. |
+
+**Connection test.** The settings page sends a real request using your saved settings and tells you precisely what is wrong: an invalid key (404), an inactive subscription (403), and an exhausted quota (429) each produce their own message rather than a generic failure.
+
+### Works alongside your SEO plugin
+
+The redirect hook runs at `template_redirect` priority **9999**, so Yoast SEO, Rank Math and Redirection get to apply their own rules first. If one of them handles the URL, no404 is never consulted. **no404 is the last resort, not the first.**
 
 ### Multisite
 
-`get_option` / `set_transient` blog bağlamında çalıştığı için her site kendi
-anahtarını ve önbelleğini kendiliğinden kullanır. `No404_Plugin::client()`
-istemciyi blog kimliğine göre önbelleğe alır; `switch_to_blog()` sonrası
-yeniden kurulur. `uninstall.php` tüm siteleri dolaşır.
+Each site keeps its own key, settings and cache. The client is rebuilt after `switch_to_blog()`, and uninstalling cleans up every site in the network.
 
 ---
 
-## Kancalar (filtreler)
+## Languages
 
-| Filtre | Amaç |
+The plugin is **written in English** and ships with seven translations. It follows your WordPress language setting — there is nothing to configure.
+
+| Locale | Language | | Locale | Language |
+| --- | --- | --- | --- | --- |
+| `tr_TR` | Türkçe | | `ru_RU` | Русский |
+| `de_DE` | Deutsch | | `hi_IN` | हिन्दी |
+| `fr_FR` | Français | | `ar` | العربية *(right-to-left)* |
+| `es_ES` | Español | | | |
+
+If your language is not on the list, the plugin falls back to English rather than showing untranslated placeholders. Translations for every string are complete — the build refuses to produce a package with a missing or empty entry.
+
+Want to add your language? See [CONTRIBUTING.md](CONTRIBUTING.md#çeviri).
+
+---
+
+## Privacy and security
+
+### What is sent to the service
+
+A request is made **only** when a visitor hits a 404 page, and only when the answer is not already cached.
+
+**Sent:** the path that 404'd (query string stripped, e.g. `/old-product`) · the `Referer` header when the browser supplies one · your site's home URL and the plugin version, in the User-Agent · your API key.
+
+**Not sent:** the visitor's IP address, their user agent, cookies, session data, form contents, or any other personal data.
+
+The service is operated by no404 — [Terms](https://no404.tr/terms) · [Privacy Policy](https://no404.tr/privacy).
+
+### Security measures
+
+- **Your API key is never printed to the page.** The settings field is a password input, and after saving only a mask (`••••••••` + last 4 characters) is shown. Submitting the field empty or masked keeps the stored key.
+- **Open-redirect protection.** The target host must be on the allow-list built from `home_url` and `site_url` (including www / non-www), and it is additionally run through WordPress's own `wp_validate_redirect()`. `//evil.com`, `javascript:` and `data:` targets are rejected.
+- **Header injection.** Targets containing control characters are rejected.
+- **Loop protection.** A target that normalises to the current path is not followed. There are no chains — one redirect per request, then `exit`.
+
+---
+
+## Hooks
+
+| Filter | Signature |
 | --- | --- |
-| `no404_skip_request` | `( bool $skip, string $path )` — bu isteği hiç sorma. |
+| `no404_skip_request` | `( bool $skip, string $path )` — skip this request entirely. |
 | `no404_redirect_target` | `( string $target, int $status, array $result, string $path )` |
 | `no404_redirect_status` | `( int $status, array $result, string $path )` |
-| `no404_allowed_hosts` | `( string[] $hosts )` — açık yönlendirme allowlist'i. |
-| `no404_client_config` | `( array $config )` — çekirdek yapılandırması. |
+| `no404_allowed_hosts` | `( string[] $hosts )` — the open-redirect allow-list. |
+| `no404_client_config` | `( array $config )` — the core client configuration. |
 
----
+Example — never redirect anything under `/shop/archive/`:
 
-## Test
-
-```bash
-php tests/test-core.php        # çekirdek — 51 kontrol
-php tests/test-wordpress.php   # entegrasyon — 45 kontrol
+```php
+add_filter( 'no404_skip_request', function ( $skip, $path ) {
+	return $skip || 0 === strpos( $path, '/shop/archive/' );
+}, 10, 2 );
 ```
 
-İkisi de WordPress kurulumu gerektirmez ve `bin/build.sh` içinde otomatik çalışır.
+---
 
-`test-core.php` çekirdeği sahte HTTP/cache adaptörleriyle çalıştırır: yol
-kanonikleştirme, kara liste, 301/302 kararı, açık yönlendirme ve döngü reddi,
-önbellek isabeti (kota), negatif önbellek, fail-open, devre kesici, bozuk yanıt.
+## Frequently asked
 
-`test-wordpress.php` eklentiyi **sahte WordPress fonksiyonlarıyla** yükleyip bir
-404 isteğini uçtan uca çalıştırır: kanca kaydı ve önceliği, gerçek yönlendirme
-durum kodları, `X-Redirect-By`, statik dosya atlama, önbellek/kota, devre
-kesici, POST atlama, ayar temizleme ve anahtar maskeleme. Tanımsız veya yanlış
-yazılmış WordPress fonksiyon çağrılarını da yakalar.
+**Does every 404 use up part of my quota?**
+No. Cached paths, static files, admin paths and non-GET requests are never sent.
 
-> İki tuzak, testleri değiştirirken dikkat: (1) yönlendirici `headers_sent()`
-> kontrol eder, bu yüzden test çıktısı tamponlanır — tamponu kaldırırsanız
-> yönlendirme senaryolarının hepsi sessizce boşa geçer. (2) Devre kesici bir
-> senaryodan diğerine sızar; `simulate()` bu yüzden varsayılan olarak önbelleği
-> temizler. Temizlemezseniz testler "geçer" ama hiçbir şey doğrulamaz.
+**What happens if the no404 service goes down?**
+Nothing visible. The lookup fails silently, your own 404 page is shown, and the circuit breaker stops further attempts for a while.
 
-### Elle doğrulanması gereken iki nokta
+**It redirected someone to the wrong page. How do I fix that?**
+Add a manual rule in your no404 dashboard. Manual rules always win over automatic matches, and always produce a 301.
 
-Bunlar test edilemez, insan gözüyle görülmelidir:
+**How can I tell a redirect came from this plugin?**
+Every redirect carries an `X-Redirect-By: no404` header.
 
-1. **Fail-open gerçekten çalışıyor mu.** `api_base`'i erişilemez bir adrese
-   çevirin, bir 404 sayfası açın: sayfa normal render edilmeli ve gecikme
-   ayarladığınız zaman aşımını aşmamalı.
-2. **WooCommerce ve SEO eklentisi çakışması.** Silinmiş bir ürün adresi ile
-   Yoast/Rank Math/Redirection kurulu bir sitede sıralamayı doğrulayın.
+**Does it slow down my site?**
+Normal pages are untouched — the plugin only runs after WordPress has already decided the request is a 404.
 
 ---
 
-## Ad, slug ve metin alanı — birbirine BAĞLI
+## Development
 
-| | Değer |
-| --- | --- |
-| Plugin Name | `no404 – Auto 404 Redirect` |
-| WordPress.org slug | `no404-auto-404-redirect` (**addan türetilir**) |
-| Text Domain | `no404-auto-404-redirect` (**slug ile aynı olmak ZORUNDA**) |
-
-Slug, eklenti adından otomatik türetilir; text domain ondan saparsa
-translate.wordpress.org çevirileri **hiç yüklemez ve bunu sessizce yapar**.
-`bin/build.sh` adı okuyup slug'ı türetir ve text domain ile karşılaştırır;
-uyuşmazsa paketlemeyi durdurur.
-
-Ad onaylandıktan sonra WordPress.org'da **değiştirilemez**.
-
-`'no404'` dizesinin text domain OLMADIĞI iki yer var, dokunmayın:
-`No404_Admin::PAGE_SLUG` (ayar sayfası adresi) ve `wp_redirect( …, 'no404' )`
-(`X-Redirect-By` başlık değeri).
-
-## Çeviri
-
-**Kaynak dil İngilizcedir** — kurulum ve ayar ekranları dahil, çeviri
-bulunamayan her yerde görünen dil budur. WordPress.org (GlotPress) çevirileri
-İngilizce kaynaktan üretir; kaynak başka bir dilde olursa dizinin çeviri
-altyapısı hiç çalışmaz.
-
-Paketle birlikte gelen diller (`bin/locales.php` bu listenin TEK kaynağıdır):
-
-| Locale  | Dil                  | Locale  | Dil       |
-|---------|----------------------|---------|-----------|
-| `tr_TR` | Türkçe               | `ru_RU` | Русский   |
-| `de_DE` | Deutsch (senli/du)   | `hi_IN` | हिन्दी      |
-| `fr_FR` | Français (vouvoiement) | `ar`  | العربية (RTL) |
-| `es_ES` | Español (tú)         |         |           |
+Architecture, the behaviour contract, tests, the translation workflow and packaging are documented in **[CONTRIBUTING.md](CONTRIBUTING.md)** (in Turkish — the working language of the team).
 
 ```bash
-php bin/i18n.php      # .pot + her dil için .po/.mo üretir, .mo'ları geri okuyup doğrular
+php tests/test-core.php        # core behaviour, no WordPress needed
+php tests/test-wordpress.php   # integration against stubbed WordPress
+bash bin/build.sh              # → dist/no404-auto-404-redirect-<version>.zip
 ```
 
-`languages/` altındaki dosyalar **üretilmiştir, elle düzenlenmez.** Karşılıklar
-`bin/translations/<locale>.php` içinde (İngilizce → hedef dil) yaşar. Betik şu
-durumlarda hata verip DURUR, katalog sessizce eksik üretilmez:
+## License
 
-- kodda olup katalogda olmayan metin,
-- katalogda kalmış ama artık kodda olmayan kayıt,
-- boş `msgstr` (WordPress sessizce İngilizceye düşerdi),
-- kaynakla uyuşmayan `%s` / `%1$s` / `%d` yer tutucusu (`sprintf` bozulurdu).
-
-`bin/build.sh` bu adımı kendisi çalıştırır ve `bin/locales.php`'deki HER dilin
-`.po`/`.mo` dosyasının pakette olduğunu doğrular.
-
-Yeni bir metin eklerken: koda İngilizcesini yaz, `bin/translations/` altındaki
-**her** dosyaya karşılığını ekle, `php bin/i18n.php` çalıştır. Yeni bir dil
-eklerken: `bin/locales.php`'ye locale kodunu ve `Plural-Forms` tanımını yaz,
-`bin/translations/<locale>.php` dosyasını oluştur.
-
-> Locale kodu WordPress'in kullandığıyla birebir aynı olmalı. Arapça `ar`'dır,
-> `ar_AR` diye bir şey yoktur; uydurma kodla üretilen `.mo` hiç yüklenmez.
-
-### `load_plugin_textdomain()` neden yok
-
-Plugin Check o çağrıyı uyarı sayıyor: WordPress 4.6'dan beri çeviriler ilk
-`__()` çağrısında kendiliğinden yükleniyor. **Ama kendiliğinden yükleme yalnızca
-`WP_LANG_DIR/plugins/` altına bakar** — yani translate.wordpress.org'dan İNEN
-dosyalara. Eklentinin kendi `languages/` klasörü o listede değildir
-(`WP_Textdomain_Registry::get_paths_for_domain`), oraya yol ekleyen tek şey
-`load_plugin_textdomain()`'dir.
-
-Yani çağrıyı silip başka bir şey yapmasaydık **pakete gömülü 7 dilin .mo
-dosyası hiç yüklenmezdi** ve arayüz her dilde İngilizce görünürdü — üstelik
-hiçbir uyarı çıkmadan. Bu yüzden `No404_Plugin::register_translations_path()`
-yolu kayda doğrudan bildiriyor (`set_custom_path`, WordPress 6.1+). Kayıt önce
-`WP_LANG_DIR/plugins/` bakıp sonra buraya düştüğü için wp.org'dan inen daha yeni
-çeviri paketteki kopyayı ezer — istediğimiz sıra bu.
-
-`tests/test-wordpress.php` hem yolun bildirildiğini hem de kaynakta
-`load_plugin_textdomain()` çağrısı KALMADIĞINI doğrular.
-
-## WordPress.org başvurusu
-
-Dizin kurallarına karşı denetim, eksikler ve tüm başvuru metinleri
-`_internal/WORDPRESS-ORG-SUBMISSION.md` dosyasında.
-
-> **`_internal/` commit EDİLMEZ.** Bu depo herkese açıktır; başvuru notları,
-> hesap bilgileri ve test kimlik bilgileri oraya konur ve `.gitignore` ile
-> dışarıda tutulur. Yeni bir dahili not yazarken README'ye değil oraya koyun.
-
----
-
-## Paketleme
-
-```bash
-bash bin/build.sh     # → dist/no404-<sürüm>.zip
-```
-
-`tests/`, `bin/`, `README.md` ve `.git` pakete girmez.
-
----
-
-## Sürüm
-
-Bu eklenti **kendi git deposunda** yaşar; no404 monorepo'suna konmaz. Gerekçe:
-eklentinin sürüm döngüsü ve dağıtım kanalı (WordPress.org SVN) ayrıdır.
-
-`/api/v1/resolve` sözleşmesi değişmediği sürece no404 tarafında bir değişiklik
-gerekmez.
-
-## Lisans
-
-GPL-2.0-or-later.
+[GPL-2.0-or-later](LICENSE).
