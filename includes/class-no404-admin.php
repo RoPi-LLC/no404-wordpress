@@ -352,6 +352,32 @@ class No404_Admin {
 	}
 
 	/**
+	 * Reduces a Location header to the address that belongs in the settings field.
+	 *
+	 * The header carries the whole redirected URL (`https://www.example.com/api/v1/
+	 * resolve/KEY?path=…`), including the API key. Only the scheme and the host are
+	 * kept: that is what the field expects, and the key never reaches the screen.
+	 *
+	 * @param string $location The Location header.
+	 * @return string Empty when the header is not a usable absolute URL.
+	 */
+	protected static function api_base_from_location( $location ) {
+		$parts = wp_parse_url( trim( $location ) );
+
+		if ( ! is_array( $parts ) || empty( $parts['host'] ) || empty( $parts['scheme'] ) ) {
+			return '';
+		}
+
+		if ( ! in_array( strtolower( $parts['scheme'] ), array( 'http', 'https' ), true ) ) {
+			return '';
+		}
+
+		$base = strtolower( $parts['scheme'] ) . '://' . strtolower( $parts['host'] );
+
+		return isset( $parts['port'] ) ? $base . ':' . (int) $parts['port'] : $base;
+	}
+
+	/**
 	 * Turns a ping result into a message a human can read.
 	 *
 	 * The user must be able to tell what is wrong from the settings screen, so
@@ -409,6 +435,17 @@ class No404_Admin {
 						$detail
 					)
 					: __( 'Could not reach the no404 server. Make sure your server is allowed to make outbound HTTPS requests.', 'no404-auto-404-redirect' );
+
+			case 'redirected':
+				$base = $detail ? self::api_base_from_location( $detail ) : '';
+
+				return $base
+					? sprintf(
+						/* translators: %s: the address the service redirects to. */
+						__( 'The no404 address redirects somewhere else. Enter %s in the "no404 address" field, save, and test again.', 'no404-auto-404-redirect' ),
+						$base
+					)
+					: __( 'The no404 address redirects somewhere else, so no answer could be read. Check the address in the settings — it is usually the www form of the domain.', 'no404-auto-404-redirect' );
 
 			case 'server_error':
 				return __( 'no404 hit a temporary error (5xx). Your site is unaffected; try again shortly.', 'no404-auto-404-redirect' );

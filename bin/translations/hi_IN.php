@@ -58,6 +58,8 @@ return array(
 	'Could not reach the no404 server: %s. Make sure your server is allowed to make outbound HTTPS requests.' => 'no404 सर्वर तक नहीं पहुँचा जा सका: %s। सुनिश्चित करें कि आपके सर्वर को बाहर की ओर HTTPS अनुरोध भेजने की अनुमति है।',
 	'Could not reach the no404 server. Make sure your server is allowed to make outbound HTTPS requests.' => 'no404 सर्वर तक नहीं पहुँचा जा सका। सुनिश्चित करें कि आपके सर्वर को बाहर की ओर HTTPS अनुरोध भेजने की अनुमति है।',
 	'no404 hit a temporary error (5xx). Your site is unaffected; try again shortly.' => 'no404 में एक अस्थायी त्रुटि आई (5xx)। इससे आपकी साइट पर कोई असर नहीं पड़ता; थोड़ी देर में दोबारा कोशिश करें।',
+	'The no404 address redirects somewhere else. Enter %s in the "no404 address" field, save, and test again.' => 'no404 पता कहीं और रीडायरेक्ट करता है। "no404 पता" फ़ील्ड में %s डालें, सहेजें और दोबारा जाँचें।',
+	'The no404 address redirects somewhere else, so no answer could be read. Check the address in the settings — it is usually the www form of the domain.' => 'no404 पता कहीं और रीडायरेक्ट करता है, इसलिए कोई उत्तर नहीं पढ़ा जा सका। सेटिंग्स में पता जाँचें — आमतौर पर यह डोमेन का www वाला रूप होता है।',
 	'Unexpected response (HTTP %d).' => 'अप्रत्याशित प्रतिक्रिया (HTTP %d)।',
 	'The no404 address must be a valid http(s) URL. The previous value has been kept. Leave the field empty to restore the default.' => 'no404 पता एक वैध http(s) URL होना चाहिए। पिछला मान बनाए रखा गया है। डिफ़ॉल्ट पर लौटने के लिए यह जगह खाली छोड़ दें।',
 );

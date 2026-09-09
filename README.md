@@ -1,12 +1,93 @@
 # no404 – Auto 404 Redirect
 
-![no404 – Auto 404 Redirect: turn 404s into opportunities. A visitor requests a page that no longer exists; instead of a "404 Page Not Found" screen they are sent, with a real server-side 301/302 redirect, to the most relevant live product page.](screen/no404tr.png)
+**Automatically recover the traffic your broken URLs are still getting.**
 
-**Send visitors who hit a 404 to the closest matching live URL on your site — with a real server-side 301.**
+[![WordPress 6.0+](https://img.shields.io/badge/WordPress-6.0%2B-21759B?logo=wordpress&logoColor=white)](https://wordpress.org/plugins/no404-auto-404-redirect/)
+[![PHP 7.4+](https://img.shields.io/badge/PHP-7.4%2B-777BB4?logo=php&logoColor=white)](https://www.php.net/)
+[![Latest release](https://img.shields.io/github/v/release/RoPi-LLC/no404-wordpress?label=release)](https://github.com/RoPi-LLC/no404-wordpress/releases/latest)
+[![License: GPL-2.0-or-later](https://img.shields.io/badge/License-GPL--2.0--or--later-blue.svg)](LICENSE)
 
-When you delete a product, change a permalink or migrate a site, the old URLs keep getting traffic for months. Visitors land on an empty 404 page and Google throws away the link equity those URLs had earned.
+![no404 – Auto 404 Redirect: turn 404s into relevant redirects. A visitor requests a page that no longer exists; instead of a "404 Not Found" screen they are sent, with a real server-side 301/302 redirect, to the closest matching live product page.](screen/banner-1544x500.png)
 
-Most redirect plugins ask you to fix this by hand: one rule per broken URL. That does not scale past a few dozen. **no404 works the other way around** — it keeps a synchronised index of the URLs your site actually has, and when a request 404s it finds the closest match automatically. You write no rules.
+no404 detects WordPress 404s and sends the visitor to the closest relevant live page on your site — with a real server-side **301**, and without you maintaining hundreds of redirect rules.
+
+Built especially for **WooCommerce** stores whose catalogue changes often, and for any site that has been migrated or re-permalinked.
+
+**[Try no404 free →](https://no404.tr)** · Free plan: **1,000 lookups per month**, no card.
+
+---
+
+## Before / After
+
+```
+Before                              With no404
+
+/products/gold-ring-2024            /products/gold-ring-2024
+        │                                   │
+        ▼                                   ▼
+404 Not Found                       301 Moved Permanently
+                                            │
+                                            ▼
+                                    /products/gold-ring
+```
+
+No redirect rule was created by hand. The match came from your own live URL index.
+
+![Turn 404s into relevant redirects: a request for a deleted product URL returns a 404, and no404 matches it automatically to the closest live product page with a real server-side 301/302.](screen/screenshot-1.png)
+
+---
+
+## Quick start
+
+1. Install the plugin (WordPress.org search, or upload the release ZIP).
+2. Create a free account at [no404.tr](https://no404.tr).
+3. Add your site in the dashboard and copy its API key.
+4. Paste the key into **Settings → no404** and press **Test the connection**.
+5. Done — the next 404 on your site is resolved automatically.
+
+Nothing is added to your theme. [Detailed installation](#installation) is further down.
+
+![Setup in minutes: install and activate the plugin, paste your API key into Settings to no404, and press Test the connection to see Connection successful.](screen/screenshot-3.png)
+
+---
+
+## Use cases
+
+| Situation | What no404 does |
+| --- | --- |
+| **Google Ads / Meta Ads** landing page removed or renamed | Paid clicks land on a live, relevant page instead of a 404 |
+| **WooCommerce** products deleted or out of catalogue | The old product URL resolves to its closest surviving equivalent |
+| **SEO backlinks** pointing at old URLs | Visitors from those links reach a real page, and the 301 passes the link on |
+| **Site migrations** | The long tail of old URLs is covered without a rule per URL |
+| **Changed permalink structure** | Old-format URLs keep working while the index catches up |
+
+### Paid and organic traffic
+
+Clicks from an ad campaign, a search result or an old backlink are the most expensive 404s you can serve — the visit is already paid for by the time the page fails.
+
+![Protect SEO and paid traffic: visitors arriving from paid campaigns, search results and old backlinks hit a removed landing page and are redirected instantly to the best live page instead of a 404.](screen/screenshot-4.png)
+
+### WooCommerce and changing catalogues
+
+Deleted product URLs are the case this plugin was built for. Renamed slugs, ended seasonal pages and restructured categories behave the same way.
+
+![Built for WooCommerce and changing catalogues: deleted products, renamed slugs, ended seasonal campaign pages and cleaned-up categories all resolve to the closest live product or collection.](screen/screenshot-5.png)
+
+---
+
+## Why it is different from a redirect table
+
+Most redirect plugins ask you to fix this by hand: one rule per broken URL. That does not scale past a few dozen. **no404 works the other way around** — it keeps a synchronised index of the URLs your site actually has, and when a request 404s it finds the closest match automatically.
+
+| | Traditional redirects | no404 |
+| --- | --- | --- |
+| Manual rules | Required, one per URL | Not required |
+| Deleted products | Fixed individually | Matched automatically |
+| Hundreds of old URLs | Time-consuming | Handled by the index |
+| Existing redirect plugins | — | Runs after them, alongside them |
+| Server-side redirect | Yes | Yes |
+
+![No more one-by-one redirect rules: broken URLs from deleted products, changed slugs and site migrations go through the automatic match engine and come out as 301s to the closest live URLs, with no manual mapping.](screen/screenshot-2.png)
 
 - **WordPress.org:** [wordpress.org/plugins/no404-auto-404-redirect](https://wordpress.org/plugins/no404-auto-404-redirect/)
 - **Source & releases:** [github.com/RoPi-LLC/no404-wordpress](https://github.com/RoPi-LLC/no404-wordpress) · [latest release](https://github.com/RoPi-LLC/no404-wordpress/releases/latest)
@@ -21,7 +102,7 @@ no404 can also be wired up with a snippet in your 404 template. That works every
 | | JS snippet | This plugin |
 | --- | --- | --- |
 | Redirect type | `location.replace` — the HTTP status **stays 404** | A real **301 / 302** |
-| SEO | Google sees a 404; link equity is lost | Link equity passes to the target |
+| SEO | Google still sees a 404 | The 301 passes the old URL's signals on to the target |
 | Crawlers | Bots that do not run JS are never redirected | Redirected |
 | Setup | Paste code into your theme | Install, paste your key |
 | API key | **Visible** in the page source | Server-side only |
@@ -88,7 +169,7 @@ If anything goes wrong at any step — the service is slow, down, or returns som
 
 ### 301 or 302?
 
-Not every match deserves a permanent redirect. Browsers and Google cache a 301 forever, and you cannot take it back.
+Not every match deserves a permanent redirect. 301s may be cached aggressively by browsers and search engines, so an incorrect permanent redirect can be hard to reverse quickly.
 
 | Match source | Score | Status |
 | --- | --- | --- |
@@ -120,7 +201,7 @@ Plan limits are based on monthly event count, so this is your bill.
 | Setting | Default | What it does |
 | --- | --- | --- |
 | Apply no404 redirects | On | The master switch. |
-| no404 address | `https://no404.tr` | Only change this if you host no404 yourself. |
+| no404 address | `https://www.no404.tr` | Only change this if you host no404 yourself. |
 | API key | — | Stored server-side; shown masked after saving. |
 | Send every match as a 301 | Off | Turns speculative 302s into permanent 301s. |
 | Cache lifetime | 3600 s | Min 60, max 604800 (7 days). Shorter means more quota used. |

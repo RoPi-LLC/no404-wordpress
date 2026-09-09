@@ -25,8 +25,37 @@ class No404_Options {
 	 *
 	 * The vast majority of users never touch this field; only people hosting
 	 * their own installation change it. Leaving the field empty restores this.
+	 *
+	 * The WWW host is the canonical one: `https://no404.tr` answers every request
+	 * with a 302 to `https://www.no404.tr`. 1.0.0 shipped the bare domain as the
+	 * default, which made the very first connection test fail on a fresh install.
 	 */
-	const DEFAULT_API_BASE = 'https://no404.tr';
+	const DEFAULT_API_BASE = 'https://www.no404.tr';
+
+	/**
+	 * The address 1.0.0 shipped as its default.
+	 *
+	 * It is not a working API base — it only redirects — so it is rewritten
+	 * wherever it is read or saved. See {@see self::normalize_api_base()}.
+	 */
+	const LEGACY_API_BASE = 'https://no404.tr';
+
+	/**
+	 * Rewrites the 1.0.0 default to the canonical host.
+	 *
+	 * Applied on read as well as on save: sites that upgrade from 1.0.0 carry the
+	 * old value in their option row, and without this they would keep hitting the
+	 * redirect until someone edited the field by hand. Any other address — a
+	 * self-hosted installation, say — is returned untouched.
+	 *
+	 * @param string $api_base The address to check.
+	 * @return string
+	 */
+	public static function normalize_api_base( $api_base ) {
+		$api_base = rtrim( trim( (string) $api_base ), '/' );
+
+		return ( self::LEGACY_API_BASE === $api_base ) ? self::DEFAULT_API_BASE : $api_base;
+	}
 
 	/**
 	 * @return array Default settings.
@@ -52,7 +81,12 @@ class No404_Options {
 			$saved = array();
 		}
 
-		return array_merge( self::defaults(), $saved );
+		$all = array_merge( self::defaults(), $saved );
+
+		// Upgrades from 1.0.0 still hold the redirecting address in the database.
+		$all['api_base'] = self::normalize_api_base( $all['api_base'] );
+
+		return $all;
 	}
 
 	/**
@@ -145,7 +179,7 @@ class No404_Options {
 			}
 		}
 
-		$clean['api_base'] = rtrim( $api_base, '/' );
+		$clean['api_base'] = self::normalize_api_base( $api_base );
 
 		// API key: an empty or still-masked submission keeps the stored key.
 		$api_key = isset( $input['api_key'] ) ? trim( (string) $input['api_key'] ) : '';

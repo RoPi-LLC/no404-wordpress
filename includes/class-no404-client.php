@@ -483,6 +483,15 @@ class No404_Client {
 			$out['detail'] = $payload['message'];
 		}
 
+		// A redirect that survived the transport's follow limit. The address is
+		// wrong rather than broken, and the Location header says what the right
+		// one is, so this gets its own code instead of "unexpected response".
+		if ( $status >= 300 && $status < 400 ) {
+			$out['code']   = 'redirected';
+			$out['detail'] = isset( $response['location'] ) ? (string) $response['location'] : '';
+			return $out;
+		}
+
 		if ( 200 === $status && is_array( $payload ) && ! empty( $payload['success'] ) ) {
 			$out['code']     = 'ok';
 			$out['found']    = ! empty( $payload['found'] );

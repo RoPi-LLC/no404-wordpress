@@ -61,6 +61,8 @@ return array(
 	'Could not reach the no404 server: %s. Make sure your server is allowed to make outbound HTTPS requests.' => 'تعذّر الوصول إلى خادم no404: %s. تأكّد من أن خادمك مسموح له بإجراء طلبات HTTPS صادرة.',
 	'Could not reach the no404 server. Make sure your server is allowed to make outbound HTTPS requests.' => 'تعذّر الوصول إلى خادم no404. تأكّد من أن خادمك مسموح له بإجراء طلبات HTTPS صادرة.',
 	'no404 hit a temporary error (5xx). Your site is unaffected; try again shortly.' => 'واجه no404 خطأً مؤقتًا (5xx). موقعك غير متأثر بذلك، وحاول مرة أخرى بعد قليل.',
+	'The no404 address redirects somewhere else. Enter %s in the "no404 address" field, save, and test again.' => 'عنوان no404 يعيد التوجيه إلى مكان آخر. أدخل %s في حقل «عنوان no404»، ثم احفظ وأعد الاختبار.',
+	'The no404 address redirects somewhere else, so no answer could be read. Check the address in the settings — it is usually the www form of the domain.' => 'عنوان no404 يعيد التوجيه إلى مكان آخر، لذلك تعذّرت قراءة أي رد. تحقّق من العنوان في الإعدادات — عادةً ما يكون صيغة النطاق مع www.',
 	'Unexpected response (HTTP %d).' => 'استجابة غير متوقّعة (HTTP %d).',
 	'The no404 address must be a valid http(s) URL. The previous value has been kept. Leave the field empty to restore the default.' => 'يجب أن يكون عنوان no404 رابط http(s) صالحًا. جرى الإبقاء على القيمة السابقة. اترك الحقل فارغًا لاستعادة القيمة الافتراضية.',
 );

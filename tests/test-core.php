@@ -202,6 +202,15 @@ $cl   = new No404_Client( array( 'api_base' => 'https://no404.tr', 'api_key' => 
 check( 'null when there is no key', $cl->resolve( '/old' ), null );
 check( 'zero calls when there is no key', $http->calls, 0 );
 
+echo PHP_EOL . '=== The connection test names the address behind a redirect ===' . PHP_EOL;
+$http = new FakeHttp();
+$http->queue = array(
+	array( 'ok' => true, 'status' => 302, 'body' => '', 'error' => '', 'location' => 'https://www.no404.tr/api/v1/resolve/testkey123?path=/test' ),
+);
+$ping = make_client( $http, new FakeCache() )->ping( '/test' );
+check( 'a 302 is reported as a redirect, not as unexpected', $ping['code'], 'redirected' );
+check( 'the Location header is carried through', $ping['detail'], 'https://www.no404.tr/api/v1/resolve/testkey123?path=/test' );
+
 echo "\n----------------------------------------\n";
 echo "PASS: $passed   FAIL: $failed\n";
 exit( $failed > 0 ? 1 : 0 );

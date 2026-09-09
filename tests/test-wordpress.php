@@ -208,6 +208,17 @@ function wp_remote_get( $url, $args = array() ) {
 }
 function wp_remote_retrieve_response_code( $r ) { return is_array( $r ) ? $r['response']['code'] : 0; }
 function wp_remote_retrieve_body( $r ) { return is_array( $r ) ? $r['body'] : ''; }
+function wp_remote_retrieve_header( $r, $name ) {
+	if ( ! is_array( $r ) || empty( $r['headers'] ) || ! is_array( $r['headers'] ) ) {
+		return '';
+	}
+	foreach ( $r['headers'] as $key => $value ) {
+		if ( strtolower( $key ) === strtolower( $name ) ) {
+			return $value;
+		}
+	}
+	return '';
+}
 
 function api_ok( $body ) {
 	return array( 'response' => array( 'code' => 200 ), 'body' => $body );
@@ -396,6 +407,7 @@ t_check(
 	true
 );
 t_check( 'timeout is 1.5 s', $GLOBALS['last_http_args']['timeout'], 1.5 );
+t_check( 'a canonical-host redirect is followed', $GLOBALS['last_http_args']['redirection'], 2 );
 t_check( 'the API key is in the URL', false !== strpos( $GLOBALS['last_http_url'], '/resolve/no404_TESTKEY?' ), true );
 
 echo "\n=== A POST request is not handled ===\n";
@@ -420,14 +432,14 @@ echo "\n=== Settings sanitising ===\n";
 $clean = No404_Options::sanitize(
 	array(
 		'enabled'    => '1',
-		'api_base'   => 'https://no404.tr/',
+		'api_base'   => 'https://no404.sirketim.com/',
 		'api_key'    => '  no404_YeniAnahtar-123_  ',
 		'cache_ttl'  => '10',      // alt sinirin altinda
 		'timeout_ms' => '999999',  // ust sinirin ustunde
 		'force_301'  => '',
 	)
 );
-t_check( 'api_base trailing slash was dropped', $clean['api_base'], 'https://no404.tr' );
+t_check( 'api_base trailing slash was dropped', $clean['api_base'], 'https://no404.sirketim.com' );
 t_check( 'the key was trimmed', $clean['api_key'], 'no404_YeniAnahtar-123_' );
 t_check( 'cache_ttl was clamped to the minimum', $clean['cache_ttl'], 60 );
 t_check( 'timeout_ms was clamped to the maximum', $clean['timeout_ms'], 10000 );
@@ -446,16 +458,30 @@ t_check( 'saving an empty value KEEPS the key', $clean['api_key'], 'no404_ABCDEF
 
 echo "\n=== The default no404 address ===\n";
 $defaults = No404_Options::defaults();
-t_check( 'the default address is no404.tr', $defaults['api_base'], 'https://no404.tr' );
-t_check( 'matches the constant', No404_Options::DEFAULT_API_BASE, 'https://no404.tr' );
+t_check( 'the default address is www.no404.tr', $defaults['api_base'], 'https://www.no404.tr' );
+t_check( 'matches the constant', No404_Options::DEFAULT_API_BASE, 'https://www.no404.tr' );
+
+// 1.0.0 shipped the bare domain, which only redirects to the www host. Saving it,
+// or reading back a database written by 1.0.0, must land on the canonical host.
+$clean = No404_Options::sanitize( array( 'api_base' => 'https://no404.tr' ) );
+t_check( 'the 1.0.0 address is rewritten on save', $clean['api_base'], 'https://www.no404.tr' );
+
+$clean = No404_Options::sanitize( array( 'api_base' => 'https://no404.tr/' ) );
+t_check( 'the trailing slash form is rewritten too', $clean['api_base'], 'https://www.no404.tr' );
+
+$GLOBALS['wp_options']['no404_settings']['api_base'] = 'https://no404.tr';
+t_check( 'an upgraded install reads the new address', No404_Options::get( 'api_base' ), 'https://www.no404.tr' );
+
+$GLOBALS['wp_options']['no404_settings']['api_base'] = 'https://no404.sirketim.com';
+t_check( 'a self-hosted address is left alone on read', No404_Options::get( 'api_base' ), 'https://no404.sirketim.com' );
 
 // Kullanicinin "yanlis yazdim, geri alayim" yolu: alani bosalt.
 $GLOBALS['wp_options']['no404_settings']['api_base'] = 'https://old-adres.example';
 $clean = No404_Options::sanitize( array( 'api_base' => '' ) );
-t_check( 'an EMPTY field restores the default', $clean['api_base'], 'https://no404.tr' );
+t_check( 'an EMPTY field restores the default', $clean['api_base'], 'https://www.no404.tr' );
 
 $clean = No404_Options::sanitize( array( 'api_base' => '   ' ) );
-t_check( 'whitespace only also restores the default', $clean['api_base'], 'https://no404.tr' );
+t_check( 'whitespace only also restores the default', $clean['api_base'], 'https://www.no404.tr' );
 
 // Kendi sunucusunda barindiran kullanici korunmali.
 $clean = No404_Options::sanitize( array( 'api_base' => 'https://no404.sirketim.com/' ) );
@@ -466,7 +492,7 @@ t_check( 'a self-hosted install is not overwritten', $clean['api_base'], 'https:
 $GLOBALS['wp_options']['no404_settings']['api_base'] = 'https://no404.sirketim.com';
 $clean = No404_Options::sanitize( array( 'api_base' => 'ftp://yanlis' ) );
 t_check( 'an invalid URL keeps the previous value', $clean['api_base'], 'https://no404.sirketim.com' );
-$GLOBALS['wp_options']['no404_settings']['api_base'] = 'https://no404.tr';
+$GLOBALS['wp_options']['no404_settings']['api_base'] = 'https://www.no404.tr';
 
 echo "\n=== Excluded paths parsing ===\n";
 $GLOBALS['wp_options']['no404_settings']['exclude_paths'] = "/campaign\n old-blog/ \n\n/temporary";

@@ -8,8 +8,8 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-08 02:09+0000\n"
-"PO-Revision-Date: 2026-09-08 02:09+0000\n"
+"POT-Creation-Date: 2026-09-09 18:05+0000\n"
+"PO-Revision-Date: 2026-09-09 18:05+0000\n"
 "Language: ar\n"
 "Plural-Forms: nplurals=6; plural=(n==0) ? 0 : ((n==1) ? 1 : ((n==2) ? 2 : ((n%100>=3 && n%100<=10) ? 3 : ((n%100>=11 && n%100<=99) ? 4 : 5))));\n"
 "X-Domain: no404-auto-404-redirect\n"
@@ -158,59 +158,67 @@ msgstr "لا تملك صلاحية القيام بذلك."
 msgid "The client could not be initialised."
 msgstr "تعذّر تهيئة العميل."
 
-#: class-no404-admin.php:371
+#: class-no404-admin.php:397
 msgid "Connection succeeded. Suggested target for this path: %1$s (source: %2$s, score: %3$s)."
 msgstr "نجح الاتصال. الوجهة المقترحة لهذا المسار: %1$s (المصدر: %2$s، الدرجة: %3$s)."
 
-#: class-no404-admin.php:378
+#: class-no404-admin.php:404
 msgid "Connection succeeded. Your API key is valid; no match was found for this test path, which is what we expect."
 msgstr "نجح الاتصال. مفتاح API صالح، ولم يُعثر على تطابق لمسار الاختبار هذا وهو المتوقّع."
 
-#: class-no404-admin.php:381
+#: class-no404-admin.php:407
 msgid "No API key has been entered. Save your key and try again."
 msgstr "لم يُدخَل أي مفتاح API. احفظ مفتاحك وحاول مرة أخرى."
 
-#: class-no404-admin.php:384
+#: class-no404-admin.php:410
 msgid "The no404 address is empty."
 msgstr "عنوان no404 فارغ."
 
-#: class-no404-admin.php:387
+#: class-no404-admin.php:413
 msgid "Invalid API key (404). Copy the key from the site settings page in your no404 dashboard; if you rotated the key recently, enter the new one here as well."
 msgstr "مفتاح API غير صالح (404). انسخ المفتاح من صفحة إعدادات الموقع في لوحة تحكّم no404، وإن كنت قد جدّدت المفتاح مؤخرًا فأدخِل الجديد هنا أيضًا."
 
-#: class-no404-admin.php:393
+#: class-no404-admin.php:419
 msgid "Access denied (403): %s. Your subscription may be inactive, monitoring for this site may be paused, or your account may be suspended."
 msgstr "رُفض الوصول (403): %s. قد يكون اشتراكك غير نشط، أو تكون مراقبة هذا الموقع موقوفة مؤقتًا، أو يكون حسابك معلّقًا."
 
-#: class-no404-admin.php:396
+#: class-no404-admin.php:422
 msgid "Access denied (403). Your subscription may be inactive, monitoring for this site may be paused, or your account may be suspended."
 msgstr "رُفض الوصول (403). قد يكون اشتراكك غير نشط، أو تكون مراقبة هذا الموقع موقوفة مؤقتًا، أو يكون حسابك معلّقًا."
 
-#: class-no404-admin.php:399
+#: class-no404-admin.php:425
 msgid "Rate limit exceeded, or your monthly event quota is used up (429). Check your quota in the no404 dashboard; if you sent many requests in a short time, try again in a minute."
 msgstr "تجاوزت حد الطلبات، أو نفدت حصّتك الشهرية من الأحداث (429). راجع حصّتك في لوحة تحكّم no404، وإن كنت قد أرسلت طلبات كثيرة في وقت قصير فحاول مرة أخرى بعد دقيقة."
 
-#: class-no404-admin.php:402
+#: class-no404-admin.php:428
 msgid "The test path is invalid (422). Enter a path that starts with \"/\"."
 msgstr "مسار الاختبار غير صالح (422). أدخِل مسارًا يبدأ بالشَّرطة المائلة «/»."
 
-#: class-no404-admin.php:408
+#: class-no404-admin.php:434
 msgid "Could not reach the no404 server: %s. Make sure your server is allowed to make outbound HTTPS requests."
 msgstr "تعذّر الوصول إلى خادم no404: %s. تأكّد من أن خادمك مسموح له بإجراء طلبات HTTPS صادرة."
 
-#: class-no404-admin.php:411
+#: class-no404-admin.php:437
 msgid "Could not reach the no404 server. Make sure your server is allowed to make outbound HTTPS requests."
 msgstr "تعذّر الوصول إلى خادم no404. تأكّد من أن خادمك مسموح له بإجراء طلبات HTTPS صادرة."
 
-#: class-no404-admin.php:414
+#: class-no404-admin.php:445
+msgid "The no404 address redirects somewhere else. Enter %s in the \"no404 address\" field, save, and test again."
+msgstr "عنوان no404 يعيد التوجيه إلى مكان آخر. أدخل %s في حقل «عنوان no404»، ثم احفظ وأعد الاختبار."
+
+#: class-no404-admin.php:448
+msgid "The no404 address redirects somewhere else, so no answer could be read. Check the address in the settings — it is usually the www form of the domain."
+msgstr "عنوان no404 يعيد التوجيه إلى مكان آخر، لذلك تعذّرت قراءة أي رد. تحقّق من العنوان في الإعدادات — عادةً ما يكون صيغة النطاق مع www."
+
+#: class-no404-admin.php:451
 msgid "no404 hit a temporary error (5xx). Your site is unaffected; try again shortly."
 msgstr "واجه no404 خطأً مؤقتًا (5xx). موقعك غير متأثر بذلك، وحاول مرة أخرى بعد قليل."
 
-#: class-no404-admin.php:419
+#: class-no404-admin.php:456
 msgid "Unexpected response (HTTP %d)."
 msgstr "استجابة غير متوقّعة (HTTP %d)."
 
-#: class-no404-options.php:143
+#: class-no404-options.php:177
 msgid "The no404 address must be a valid http(s) URL. The previous value has been kept. Leave the field empty to restore the default."
 msgstr "يجب أن يكون عنوان no404 رابط http(s) صالحًا. جرى الإبقاء على القيمة السابقة. اترك الحقل فارغًا لاستعادة القيمة الافتراضية."
 

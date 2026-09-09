@@ -4,7 +4,7 @@ Tags: 404, redirect, 301, seo, broken links
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -12,7 +12,7 @@ Automatically redirect 404s to the closest matching live URL on your site, with 
 
 == Description ==
 
-When you delete a product, change a permalink or migrate a site, the old URLs keep getting traffic. Visitors land on an empty 404 page and Google throws away the link equity those URLs had earned.
+When you delete a product, change a permalink or migrate a site, the old URLs keep getting traffic. Visitors land on an empty 404 page, and the traffic and the signals those old links carry go nowhere.
 
 Most redirect plugins ask you to fix this by hand: you write a rule for every broken URL. That does not scale past a few dozen.
 
@@ -30,7 +30,7 @@ If the service is slow or unreachable, the plugin steps aside and your theme's o
 
 = 301 or 302? =
 
-The default is deliberately cautious, because a 301 is cached permanently by browsers and by Google and cannot be taken back:
+The default is deliberately cautious, because 301s may be cached aggressively by browsers and search engines and can be hard to reverse quickly:
 
 * Redirects you defined by hand in your no404 dashboard → **301**
 * High confidence catalogue matches (score 0.5 and above) → **301**
@@ -141,11 +141,16 @@ It follows your WordPress language setting. English is the default, and translat
 
 == Screenshots ==
 
-1. Settings → no404: connection and behaviour settings.
-2. The connection test reporting a successful lookup.
-3. Excluded paths and cache configuration.
+1. Turn 404 errors into relevant redirects automatically with real server-side 301/302 redirects.
+2. Automatically match broken URLs with the closest relevant live pages without creating redirect rules one by one.
+3. Set up no404 in minutes by installing the plugin, adding your API key, and testing the connection.
+4. Protect SEO and paid traffic by redirecting visitors from broken landing pages, search results, and old backlinks.
+5. Built for WooCommerce stores and changing catalogs, including deleted products, renamed URLs, seasonal pages, and migrations.
 
 == Changelog ==
+
+= 1.0.1 =
+* Fixed: the connection test reported "unexpected response (HTTP 302)" on a fresh install. The bundled address, https://no404.tr, redirects to the www host, and the plugin did not follow it. The default is now https://www.no404.tr, sites upgrading from 1.0.0 are moved across automatically, and a redirect the plugin cannot follow now names the address to use instead of reporting an unexpected response.
 
 = 1.0.0 =
 * Initial release.
@@ -157,6 +162,9 @@ It follows your WordPress language setting. English is the default, and translat
 * Multisite support.
 
 == Upgrade Notice ==
+
+= 1.0.1 =
+Fixes the connection test failing with "unexpected response (HTTP 302)" on a fresh install. Recommended for everyone.
 
 = 1.0.0 =
 Initial release.

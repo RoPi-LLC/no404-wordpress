@@ -8,8 +8,8 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-08 02:09+0000\n"
-"PO-Revision-Date: 2026-09-08 02:09+0000\n"
+"POT-Creation-Date: 2026-09-09 18:05+0000\n"
+"PO-Revision-Date: 2026-09-09 18:05+0000\n"
 "Language: es_ES\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Domain: no404-auto-404-redirect\n"
@@ -158,59 +158,67 @@ msgstr "No tienes permisos para hacer esto."
 msgid "The client could not be initialised."
 msgstr "No se ha podido inicializar el cliente."
 
-#: class-no404-admin.php:371
+#: class-no404-admin.php:397
 msgid "Connection succeeded. Suggested target for this path: %1$s (source: %2$s, score: %3$s)."
 msgstr "Conexión correcta. Destino sugerido para esta ruta: %1$s (origen: %2$s, puntuación: %3$s)."
 
-#: class-no404-admin.php:378
+#: class-no404-admin.php:404
 msgid "Connection succeeded. Your API key is valid; no match was found for this test path, which is what we expect."
 msgstr "Conexión correcta. Tu clave de API es válida; no se ha encontrado ninguna coincidencia para esta ruta de prueba, que es justo lo esperado."
 
-#: class-no404-admin.php:381
+#: class-no404-admin.php:407
 msgid "No API key has been entered. Save your key and try again."
 msgstr "No se ha introducido ninguna clave de API. Guarda tu clave e inténtalo de nuevo."
 
-#: class-no404-admin.php:384
+#: class-no404-admin.php:410
 msgid "The no404 address is empty."
 msgstr "La dirección de no404 está vacía."
 
-#: class-no404-admin.php:387
+#: class-no404-admin.php:413
 msgid "Invalid API key (404). Copy the key from the site settings page in your no404 dashboard; if you rotated the key recently, enter the new one here as well."
 msgstr "Clave de API no válida (404). Copia la clave desde la página de ajustes del sitio de tu escritorio de no404; si la has renovado hace poco, introduce aquí también la nueva."
 
-#: class-no404-admin.php:393
+#: class-no404-admin.php:419
 msgid "Access denied (403): %s. Your subscription may be inactive, monitoring for this site may be paused, or your account may be suspended."
 msgstr "Acceso denegado (403): %s. Puede que tu suscripción esté inactiva, que la monitorización de este sitio esté en pausa o que tu cuenta esté suspendida."
 
-#: class-no404-admin.php:396
+#: class-no404-admin.php:422
 msgid "Access denied (403). Your subscription may be inactive, monitoring for this site may be paused, or your account may be suspended."
 msgstr "Acceso denegado (403). Puede que tu suscripción esté inactiva, que la monitorización de este sitio esté en pausa o que tu cuenta esté suspendida."
 
-#: class-no404-admin.php:399
+#: class-no404-admin.php:425
 msgid "Rate limit exceeded, or your monthly event quota is used up (429). Check your quota in the no404 dashboard; if you sent many requests in a short time, try again in a minute."
 msgstr "Se ha superado el límite de peticiones o se ha agotado tu cuota mensual de eventos (429). Revisa tu cuota en el escritorio de no404; si has enviado muchas peticiones en poco tiempo, inténtalo de nuevo dentro de un minuto."
 
-#: class-no404-admin.php:402
+#: class-no404-admin.php:428
 msgid "The test path is invalid (422). Enter a path that starts with \"/\"."
 msgstr "La ruta de prueba no es válida (422). Introduce una ruta que empiece por «/»."
 
-#: class-no404-admin.php:408
+#: class-no404-admin.php:434
 msgid "Could not reach the no404 server: %s. Make sure your server is allowed to make outbound HTTPS requests."
 msgstr "No se ha podido contactar con el servidor de no404: %s. Asegúrate de que tu servidor tiene permiso para hacer peticiones HTTPS salientes."
 
-#: class-no404-admin.php:411
+#: class-no404-admin.php:437
 msgid "Could not reach the no404 server. Make sure your server is allowed to make outbound HTTPS requests."
 msgstr "No se ha podido contactar con el servidor de no404. Asegúrate de que tu servidor tiene permiso para hacer peticiones HTTPS salientes."
 
-#: class-no404-admin.php:414
+#: class-no404-admin.php:445
+msgid "The no404 address redirects somewhere else. Enter %s in the \"no404 address\" field, save, and test again."
+msgstr "La dirección de no404 redirige a otro sitio. Escribe %s en el campo «Dirección de no404», guarda y vuelve a probar."
+
+#: class-no404-admin.php:448
+msgid "The no404 address redirects somewhere else, so no answer could be read. Check the address in the settings — it is usually the www form of the domain."
+msgstr "La dirección de no404 redirige a otro sitio, así que no se pudo leer ninguna respuesta. Revisa la dirección en los ajustes: normalmente es la forma con www del dominio."
+
+#: class-no404-admin.php:451
 msgid "no404 hit a temporary error (5xx). Your site is unaffected; try again shortly."
 msgstr "no404 ha tenido un error temporal (5xx). Tu sitio no se ve afectado; vuelve a intentarlo en un momento."
 
-#: class-no404-admin.php:419
+#: class-no404-admin.php:456
 msgid "Unexpected response (HTTP %d)."
 msgstr "Respuesta inesperada (HTTP %d)."
 
-#: class-no404-options.php:143
+#: class-no404-options.php:177
 msgid "The no404 address must be a valid http(s) URL. The previous value has been kept. Leave the field empty to restore the default."
 msgstr "La dirección de no404 debe ser una URL http(s) válida. Se ha conservado el valor anterior. Deja el campo vacío para restaurar el valor por defecto."
 

@@ -57,6 +57,8 @@ return array(
 	'Could not reach the no404 server: %s. Make sure your server is allowed to make outbound HTTPS requests.' => 'Не удалось связаться с сервером no404: %s. Убедитесь, что вашему серверу разрешены исходящие HTTPS-запросы.',
 	'Could not reach the no404 server. Make sure your server is allowed to make outbound HTTPS requests.' => 'Не удалось связаться с сервером no404. Убедитесь, что вашему серверу разрешены исходящие HTTPS-запросы.',
 	'no404 hit a temporary error (5xx). Your site is unaffected; try again shortly.' => 'На стороне no404 произошла временная ошибка (5xx). На вашем сайте это не сказывается; повторите попытку чуть позже.',
+	'The no404 address redirects somewhere else. Enter %s in the "no404 address" field, save, and test again.' => 'Адрес no404 перенаправляет в другое место. Укажите %s в поле «Адрес no404», сохраните и повторите проверку.',
+	'The no404 address redirects somewhere else, so no answer could be read. Check the address in the settings — it is usually the www form of the domain.' => 'Адрес no404 перенаправляет в другое место, поэтому ответ не удалось прочитать. Проверьте адрес в настройках — обычно это вариант домена с www.',
 	'Unexpected response (HTTP %d).' => 'Неожиданный ответ (HTTP %d).',
 	'The no404 address must be a valid http(s) URL. The previous value has been kept. Leave the field empty to restore the default.' => 'Адрес no404 должен быть корректным http(s)-адресом. Прежнее значение сохранено. Оставьте поле пустым, чтобы вернуть значение по умолчанию.',
 );

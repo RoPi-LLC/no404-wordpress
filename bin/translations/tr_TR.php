@@ -61,6 +61,8 @@ return array(
 	'Could not reach the no404 server: %s. Make sure your server is allowed to make outbound HTTPS requests.' => 'no404 sunucusuna ulaşılamadı: %s. Sunucunuzun dışarıya HTTPS isteği yapabildiğinden emin olun.',
 	'Could not reach the no404 server. Make sure your server is allowed to make outbound HTTPS requests.' => 'no404 sunucusuna ulaşılamadı. Sunucunuzun dışarıya HTTPS isteği yapabildiğinden emin olun.',
 	'no404 hit a temporary error (5xx). Your site is unaffected; try again shortly.' => 'no404 tarafında geçici bir hata oluştu (5xx). Siteniz etkilenmez; birazdan tekrar deneyin.',
+	'The no404 address redirects somewhere else. Enter %s in the "no404 address" field, save, and test again.' => 'no404 adresi başka bir adrese yönlendiriyor. Ayarlardaki no404 adresi alanına %s yazıp kaydedin ve tekrar test edin.',
+	'The no404 address redirects somewhere else, so no answer could be read. Check the address in the settings — it is usually the www form of the domain.' => 'no404 adresi başka bir adrese yönlendirdiği için yanıt okunamadı. Ayarlardaki adresi kontrol edin — bu adres genellikle alan adının www ile başlayan biçimidir.',
 	'Unexpected response (HTTP %d).' => 'Beklenmeyen yanıt (HTTP %d).',
 	'The no404 address must be a valid http(s) URL. The previous value has been kept. Leave the field empty to restore the default.' => 'no404 adresi geçerli bir http(s) URL olmalı. Önceki değer korundu. Varsayılana dönmek için alanı boş bırakın.',
 );

@@ -57,6 +57,8 @@ return array(
 	'Could not reach the no404 server: %s. Make sure your server is allowed to make outbound HTTPS requests.' => 'No se ha podido contactar con el servidor de no404: %s. Asegúrate de que tu servidor tiene permiso para hacer peticiones HTTPS salientes.',
 	'Could not reach the no404 server. Make sure your server is allowed to make outbound HTTPS requests.' => 'No se ha podido contactar con el servidor de no404. Asegúrate de que tu servidor tiene permiso para hacer peticiones HTTPS salientes.',
 	'no404 hit a temporary error (5xx). Your site is unaffected; try again shortly.' => 'no404 ha tenido un error temporal (5xx). Tu sitio no se ve afectado; vuelve a intentarlo en un momento.',
+	'The no404 address redirects somewhere else. Enter %s in the "no404 address" field, save, and test again.' => 'La dirección de no404 redirige a otro sitio. Escribe %s en el campo «Dirección de no404», guarda y vuelve a probar.',
+	'The no404 address redirects somewhere else, so no answer could be read. Check the address in the settings — it is usually the www form of the domain.' => 'La dirección de no404 redirige a otro sitio, así que no se pudo leer ninguna respuesta. Revisa la dirección en los ajustes: normalmente es la forma con www del dominio.',
 	'Unexpected response (HTTP %d).' => 'Respuesta inesperada (HTTP %d).',
 	'The no404 address must be a valid http(s) URL. The previous value has been kept. Leave the field empty to restore the default.' => 'La dirección de no404 debe ser una URL http(s) válida. Se ha conservado el valor anterior. Deja el campo vacío para restaurar el valor por defecto.',
 );
