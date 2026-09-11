@@ -25,10 +25,12 @@ class FakeHttp implements No404_Http_Interface {
 	public $calls = 0;
 	public $queue = array();
 	public $last_url = '';
+	public $last_headers = array();
 
-	public function get( $url, $timeout_ms, $user_agent ) {
+	public function get( $url, $timeout_ms, $user_agent, array $headers = array() ) {
 		$this->calls++;
-		$this->last_url = $url;
+		$this->last_url     = $url;
+		$this->last_headers = $headers;
 		if ( empty( $this->queue ) ) {
 			return array( 'ok' => true, 'status' => 200, 'body' => '{"success":true,"found":false,"redirect":null,"score":0,"source":"NONE"}', 'error' => '' );
 		}
@@ -106,6 +108,13 @@ check( 'CATALOG low score -> 302', $c->decide_status( array( 'source' => 'CATALO
 check( 'FALLBACK -> 302', $c->decide_status( array( 'source' => 'FALLBACK', 'score' => 0.0 ) ), 302 );
 $forced = make_client( new FakeHttp(), new FakeCache(), array( 'force_301' => true ) );
 check( 'FALLBACK -> 301 when force_301 is on', $forced->decide_status( array( 'source' => 'FALLBACK', 'score' => 0.0 ) ), 301 );
+
+echo "\n=== decide_status: the API's redirectStatus (panel threshold) ===\n";
+check( 'API 302 wins over a high CATALOG score', $c->decide_status( array( 'source' => 'CATALOG', 'score' => 0.92, 'redirect_status' => 302 ) ), 302 );
+check( 'API 301 wins over a low CATALOG score', $c->decide_status( array( 'source' => 'CATALOG', 'score' => 0.42, 'redirect_status' => 301 ) ), 301 );
+check( 'an invalid redirectStatus falls back to the local rule', $c->decide_status( array( 'source' => 'CATALOG', 'score' => 0.42, 'redirect_status' => 307 ) ), 302 );
+check( 'a missing redirectStatus (older API) keeps the local rule', $c->decide_status( array( 'source' => 'CATALOG', 'score' => 0.92 ) ), 301 );
+check( 'force_301 still wins over the API', $forced->decide_status( array( 'source' => 'CATALOG', 'score' => 0.42, 'redirect_status' => 302 ) ), 301 );
 
 echo "\n=== validate_target (open redirect + loop protection) ===\n";
 check( 'allowed host passes', $c->validate_target( 'https://store.example/new', '/old' ), 'https://store.example/new' );
@@ -193,8 +202,48 @@ $cl->resolve( '/14-gram-altin-yüzük', 'https://google.com/search?q=x' );
 check(
 	'the URL was built correctly',
 	$http->last_url,
-	'https://no404.tr/api/v1/resolve/testkey123?path=' . rawurlencode( '/14-gram-altin-yüzük' ) . '&ref=' . rawurlencode( 'https://google.com/search?q=x' )
+	'https://no404.tr/api/v1/resolve?path=' . rawurlencode( '/14-gram-altin-yüzük' ) . '&ref=' . rawurlencode( 'https://google.com/search?q=x' )
 );
+check( 'the API key travels in the Authorization header', $http->last_headers, array( 'Authorization' => 'Bearer testkey123' ) );
+check( 'the API key is NOT in the URL', false !== strpos( $http->last_url, 'testkey123' ), false );
+
+echo "\n=== detect_ad_category (only the category leaves the site) ===\n";
+check( 'gclid -> google', $c->detect_ad_category( '/p?gclid=abc' ), 'google' );
+check( 'gbraid -> google', $c->detect_ad_category( '/p?gbraid=abc' ), 'google' );
+check( 'msclkid -> microsoft', $c->detect_ad_category( '/p?msclkid=abc' ), 'microsoft' );
+check( 'paid utm + facebook -> meta', $c->detect_ad_category( '/p?utm_medium=paid&utm_source=facebook' ), 'meta' );
+check( "Meta's site_source_name ig -> meta", $c->detect_ad_category( '/p?utm_source=ig&utm_medium=paid' ), 'meta' );
+check( 'cpc + google source -> google', $c->detect_ad_category( '/p?utm_medium=CPC&utm_source=google' ), 'google' );
+check( 'paid + unknown source -> other', $c->detect_ad_category( '/p?utm_medium=cpc&utm_source=newsletter' ), 'other' );
+check( 'ttclid -> other', $c->detect_ad_category( '/p?ttclid=1' ), 'other' );
+check( 'fbclid alone is NOT an ad', $c->detect_ad_category( '/p?fbclid=xyz' ), '' );
+check( 'organic utm is not an ad', $c->detect_ad_category( '/p?utm_medium=email&utm_source=newsletter' ), '' );
+check( 'no query string -> empty', $c->detect_ad_category( '/p' ), '' );
+check( 'a click ID in the fragment is ignored', $c->detect_ad_category( '/p#gclid=abc' ), '' );
+
+echo "\n=== resolve: an ad click skips the cache READ and sends only the category ===\n";
+$hit   = '{"success":true,"found":true,"redirect":"https://store.example/new","score":0.9,"source":"CATALOG"}';
+$http  = new FakeHttp();
+$cache = new FakeCache();
+$cl    = make_client( $http, $cache );
+$http->queue = array( ok_response( $hit ), ok_response( $hit ) );
+$cl->resolve( '/old-product' );
+$cl->resolve( '/old-product', '', 'google' );
+check( 'an ad click reaches the API even when the path is cached', $http->calls, 2 );
+check( 'only the category is sent', false !== strpos( $http->last_url, '&ad=google' ), true );
+$cl->resolve( '/old-product' );
+check( 'organic traffic still uses the cache', $http->calls, 2 );
+$cl->resolve( '/old-product', '', 'gclid=abc123' );
+check( 'an unknown category is dropped and the cache is used', $http->calls, 2 );
+
+echo "\n=== resolve: an ad click falls back to the cache when no404 is down ===\n";
+$http  = new FakeHttp();
+$cache = new FakeCache();
+$cl    = make_client( $http, $cache );
+$http->queue = array( ok_response( $hit ), array( 'ok' => false, 'status' => 0, 'body' => '', 'error' => 'timeout' ) );
+$cl->resolve( '/old-product' );
+$r = $cl->resolve( '/old-product', '', 'meta' );
+check( 'the cached redirect is still used', is_array( $r ) ? $r['redirect'] : null, 'https://store.example/new' );
 
 echo "\n=== An unconfigured plugin stays silent ===\n";
 $http = new FakeHttp();

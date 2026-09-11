@@ -15,10 +15,11 @@ class No404_WP_Http implements No404_Http_Interface {
 	 * @param string $url        Full URL.
 	 * @param int    $timeout_ms Timeout in milliseconds.
 	 * @param string $user_agent User-Agent.
+	 * @param array  $headers    Extra request headers (name => value).
 	 *
 	 * @return array ok/status/body/error/location
 	 */
-	public function get( $url, $timeout_ms, $user_agent ) {
+	public function get( $url, $timeout_ms, $user_agent, array $headers = array() ) {
 		$response = wp_remote_get(
 			$url,
 			array(
@@ -34,7 +35,7 @@ class No404_WP_Http implements No404_Http_Interface {
 				'redirection' => 2,
 				'sslverify'   => true,
 				'user-agent'  => $user_agent,
-				'headers'     => array( 'Accept' => 'application/json' ),
+				'headers'     => array_merge( array( 'Accept' => 'application/json' ), $headers ),
 			)
 		);
 

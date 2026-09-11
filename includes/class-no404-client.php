@@ -27,6 +27,28 @@ class No404_Client {
 	/** Cache schema version — bump it when the shape changes; old entries are skipped. */
 	const CACHE_SCHEMA = 'v1';
 
+	/** Ad categories the no404 API accepts in `ad=` (it drops anything else). */
+	const AD_CATEGORIES = array( 'google', 'microsoft', 'meta', 'other' );
+
+	/** `utm_medium` values that mark paid traffic (lower case) — same list as the server. */
+	const PAID_MEDIUMS = array(
+		'cpc',
+		'ppc',
+		'paid',
+		'paidsearch',
+		'paid_search',
+		'paid-search',
+		'paidsocial',
+		'paid_social',
+		'paid-social',
+		'display',
+		'cpm',
+		'cpv',
+		'banner',
+		'retargeting',
+		'remarketing',
+	);
+
 	/** CATALOG matches above this score count as permanent (301). */
 	const HIGH_CONFIDENCE_SCORE = 0.5;
 
@@ -161,12 +183,18 @@ class No404_Client {
 	 * returns something malformed, this returns `null` and the store renders its
 	 * own 404 page.
 	 *
+	 * AD CLICKS: when `$ad` is a known category (see detect_ad_category), the cache
+	 * is NOT read — the API is asked every time. Ad 404s are few and each one is a
+	 * paid click; answering them from the cache would leave them uncounted in the
+	 * dashboard. If no404 cannot be reached, the cached result is still used.
+	 *
 	 * @param string $path     The path that returned 404.
 	 * @param string $referrer Where the visitor came from (optional).
+	 * @param string $ad       Ad category from detect_ad_category() ('' = not an ad click).
 	 *
 	 * @return array|null found/redirect/score/source, or null when there is no redirect.
 	 */
-	public function resolve( $path, $referrer = '' ) {
+	public function resolve( $path, $referrer = '', $ad = '' ) {
 		try {
 			if ( ! $this->is_configured() ) {
 				return null;
@@ -180,25 +208,31 @@ class No404_Client {
 				return null;
 			}
 
+			$ad     = in_array( $ad, self::AD_CATEGORIES, true ) ? $ad : '';
 			$key    = $this->cache_key( $path );
 			$cached = $this->cache->get( $key );
-			if ( is_array( $cached ) && isset( $cached['source'] ) ) {
+			$cached = ( is_array( $cached ) && isset( $cached['source'] ) ) ? $cached : null;
+			if ( null !== $cached && '' === $ad ) {
 				return $cached;
 			}
 
 			// Circuit breaker: while the API is unreachable or out of quota, do not
 			// retry on every single 404.
 			if ( null !== $this->cache->get( self::OUTAGE_KEY ) ) {
-				return null;
+				return $cached;
 			}
 
 			$response = $this->http->get(
-				$this->build_url( $path, $referrer ),
+				$this->build_url( $path, $referrer, $ad ),
 				$this->timeout_ms,
-				$this->user_agent
+				$this->user_agent,
+				$this->auth_headers()
 			);
 
-			return $this->handle_response( $response, $key );
+			$result = $this->handle_response( $response, $key );
+
+			// An ad click that could not be answered falls back to what we knew.
+			return ( null === $result && null !== $cached ) ? $cached : $result;
 		} catch ( Exception $e ) {
 			return null;
 		} catch ( Throwable $e ) { // PHP 7+ fatal-error guard.
@@ -251,6 +285,8 @@ class No404_Client {
 			'redirect' => isset( $payload['redirect'] ) && is_string( $payload['redirect'] ) ? $payload['redirect'] : null,
 			'score'    => isset( $payload['score'] ) ? (float) $payload['score'] : 0.0,
 			'source'   => isset( $payload['source'] ) && is_string( $payload['source'] ) ? $payload['source'] : 'NONE',
+			// The API's own 301/302 decision (0 when absent — older API versions).
+			'redirect_status' => self::read_redirect_status( $payload ),
 		);
 
 		// Negative results are cached too — this is what actually protects the quota.
@@ -265,12 +301,21 @@ class No404_Client {
 	 * A 301 is cached PERMANENTLY by browsers and by Google; issuing one for a
 	 * speculative match cannot be undone, even if the catalogue is corrected later.
 	 *
+	 * Order: the "force 301" setting → the API's `redirectStatus` (computed from
+	 * the 301 threshold the site owner picked in the no404 panel) → the local
+	 * rule below, which only applies to API versions that don't send the field.
+	 *
 	 * @param array $result Output of resolve().
 	 * @return int 301 veya 302.
 	 */
 	public function decide_status( array $result ) {
 		if ( $this->force_301 ) {
 			return 301;
+		}
+
+		$api_status = isset( $result['redirect_status'] ) ? (int) $result['redirect_status'] : 0;
+		if ( 301 === $api_status || 302 === $api_status ) {
+			return $api_status;
 		}
 
 		$source = isset( $result['source'] ) ? $result['source'] : 'NONE';
@@ -284,6 +329,21 @@ class No404_Client {
 		}
 
 		return 302; // Low-scoring CATALOG and FALLBACK → keep it reversible.
+	}
+
+	/**
+	 * `redirectStatus` from an API payload: 301, 302, or 0 when absent/invalid.
+	 * Anything else (a 307, a string, a missing field) is ignored so the local
+	 * rule in decide_status() stays in charge.
+	 *
+	 * @param array $payload Decoded API response.
+	 * @return int
+	 */
+	private static function read_redirect_status( array $payload ) {
+		$value = isset( $payload['redirectStatus'] ) && is_numeric( $payload['redirectStatus'] )
+			? (int) $payload['redirectStatus']
+			: 0;
+		return ( 301 === $value || 302 === $value ) ? $value : 0;
 	}
 
 	/**
@@ -464,9 +524,10 @@ class No404_Client {
 		}
 
 		$response = $this->http->get(
-			$this->build_url( $this->normalize_path( $path ), '' ),
+			$this->build_url( $this->normalize_path( $path ), '', '' ),
 			max( 5000, $this->timeout_ms ), // During a test the user can afford to wait.
-			$this->user_agent
+			$this->user_agent,
+			$this->auth_headers()
 		);
 
 		if ( empty( $response['ok'] ) ) {
@@ -524,19 +585,101 @@ class No404_Client {
 	/**
 	 * Builds the request URL.
 	 *
+	 * The API key is NOT part of the URL: it travels in the Authorization header
+	 * (see auth_headers). A key in the URL ends up in web server, proxy and CDN
+	 * logs; a header does not.
+	 *
 	 * @param string $path     The normalised path.
 	 * @param string $referrer Referrer.
+	 * @param string $ad       Ad category ('' = not an ad click).
 	 * @return string
 	 */
-	protected function build_url( $path, $referrer ) {
+	protected function build_url( $path, $referrer, $ad = '' ) {
 		$query = 'path=' . rawurlencode( $path );
 
 		$referrer = trim( (string) $referrer );
 		if ( '' !== $referrer ) {
 			$query .= '&ref=' . rawurlencode( substr( $referrer, 0, self::MAX_PATH_LENGTH ) );
 		}
+		if ( in_array( $ad, self::AD_CATEGORIES, true ) ) {
+			$query .= '&ad=' . $ad;
+		}
 
-		return $this->api_base . '/api/v1/resolve/' . rawurlencode( $this->api_key ) . '?' . $query;
+		return $this->api_base . '/api/v1/resolve?' . $query;
+	}
+
+	/** @return array The Authorization header carrying the API key. */
+	protected function auth_headers() {
+		return array( 'Authorization' => 'Bearer ' . $this->api_key );
+	}
+
+	/**
+	 * Works out whether a request came from an ad click, from its RAW request URI
+	 * (query string included). Returns only the CATEGORY — google, microsoft, meta,
+	 * other — or '' for organic traffic. The raw click ID (gclid, msclkid…) never
+	 * leaves the site. Mirrors the no404 server's own rules (lib/ad-source.ts):
+	 * fbclid alone is NOT an ad, because Facebook adds it to organic shares too.
+	 *
+	 * @param string $raw_uri Request URI, e.g. /product?gclid=abc.
+	 * @return string
+	 */
+	public function detect_ad_category( $raw_uri ) {
+		$raw = (string) $raw_uri;
+		$q   = strpos( $raw, '?' );
+		if ( false === $q ) {
+			return '';
+		}
+
+		$query = substr( $raw, $q + 1 );
+		$hash  = strpos( $query, '#' );
+		if ( false !== $hash ) {
+			$query = substr( $query, 0, $hash );
+		}
+
+		$params = array();
+		parse_str( $query, $params );
+		$value = function ( $key ) use ( $params ) {
+			return ( isset( $params[ $key ] ) && is_string( $params[ $key ] ) ) ? strtolower( trim( $params[ $key ] ) ) : '';
+		};
+
+		foreach ( array( 'gclid', 'gbraid', 'wbraid', 'gclsrc' ) as $key ) {
+			if ( '' !== $value( $key ) ) {
+				return 'google';
+			}
+		}
+		if ( '' !== $value( 'msclkid' ) ) {
+			return 'microsoft';
+		}
+		if ( in_array( $value( 'utm_medium' ), self::PAID_MEDIUMS, true ) ) {
+			return self::category_for_source( $value( 'utm_source' ) );
+		}
+		foreach ( array( 'ttclid', 'twclid', 'li_fat_id' ) as $key ) {
+			if ( '' !== $value( $key ) ) {
+				return 'other';
+			}
+		}
+
+		return '';
+	}
+
+	/**
+	 * The ad network of a click already known to be paid, from `utm_source`.
+	 * Meta's `{{site_source_name}}` yields fb, ig, an or msg — all four are Meta.
+	 *
+	 * @param string $source Lower-case utm_source.
+	 * @return string
+	 */
+	private static function category_for_source( $source ) {
+		if ( preg_match( '/google|adwords/', $source ) ) {
+			return 'google';
+		}
+		if ( preg_match( '/bing|microsoft/', $source ) ) {
+			return 'microsoft';
+		}
+		if ( preg_match( '/facebook|instagram|meta|messenger|audience_network|threads|^(fb|ig|an|msg)$/', $source ) ) {
+			return 'meta';
+		}
+		return 'other';
 	}
 
 	/**
@@ -552,10 +695,11 @@ class No404_Client {
 	/** @return array The "no match found" result (used for negative caching). */
 	protected function empty_result() {
 		return array(
-			'found'    => false,
-			'redirect' => null,
-			'score'    => 0.0,
-			'source'   => 'NONE',
+			'found'           => false,
+			'redirect'        => null,
+			'score'           => 0.0,
+			'source'          => 'NONE',
+			'redirect_status' => 0,
 		);
 	}
 

@@ -3,7 +3,7 @@
  * Plugin Name:       no404 – Auto 404 Redirect
  * Plugin URI:        https://no404.tr
  * Description:       Automatically redirects visitors who hit a 404 to the closest matching live URL on your site, using a real server-side 301.
- * Version:           1.0.1
+ * Version:           1.0.2
  * Requires at least: 6.0
  * Tested up to:      7.1
  * Requires PHP:      7.4
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'NO404_VERSION', '1.0.1' );
+define( 'NO404_VERSION', '1.0.2' );
 define( 'NO404_PLUGIN_FILE', __FILE__ );
 define( 'NO404_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 

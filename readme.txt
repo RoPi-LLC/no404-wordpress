@@ -4,7 +4,7 @@ Tags: 404, redirect, 301, seo, broken links
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.1
+Stable tag: 1.0.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -30,13 +30,13 @@ If the service is slow or unreachable, the plugin steps aside and your theme's o
 
 = 301 or 302? =
 
-The default is deliberately cautious, because 301s may be cached aggressively by browsers and search engines and can be hard to reverse quickly:
+You decide, in your no404 dashboard (site Settings → "Permanent (301) or temporary (302)?"). Because 301s may be cached aggressively by browsers and search engines and can be hard to reverse quickly, the default is cautious:
 
 * Redirects you defined by hand in your no404 dashboard → **301**
-* High confidence catalogue matches (score 0.5 and above) → **301**
+* Catalogue matches at or above your 301 threshold (0.5 by default; you can pick 0.7, 0.35, a custom value, or "only manual redirects get a 301") → **301**
 * Lower confidence matches and fallbacks → **302**
 
-You can force everything to 301 in the settings, but it is off by default.
+The no404 API sends this decision with every result and the plugin follows it, so changing the setting needs no plugin update. You can still force everything to 301 in the plugin settings, but it is off by default.
 
 = Quota friendly by design =
 
@@ -109,7 +109,11 @@ Nothing breaks. The plugin fails open: if a request times out or errors, no redi
 
 = Does every 404 use up part of my quota? =
 
-No. Results are cached for an hour by default, so the same URL costs at most one lookup per hour. Results with no match are cached too. Static files and admin paths are never sent.
+No. Results are cached for an hour by default, so the same URL costs at most one lookup per hour. Results with no match are cached too. Static files and admin paths are never sent. The one exception is a visit from an ad click: it is always looked up, so paid traffic that lands on a 404 shows up in your dashboard.
+
+= Does the plugin send my visitors' click IDs to no404? =
+
+No. The query string never leaves your site. When a visit carries an ad click ID (gclid, msclkid) or a paid `utm_medium`, the plugin sends only the ad network — google, microsoft, meta or other.
 
 = It redirected someone to the wrong page. How do I fix that? =
 
@@ -149,6 +153,13 @@ It follows your WordPress language setting. English is the default, and translat
 
 == Changelog ==
 
+= 1.0.2 =
+* New: the redirect status (301 or 302) now follows the threshold you choose in your no404 dashboard (site Settings → "Permanent (301) or temporary (302)?"). The no404 API sends its decision with every result and the plugin uses it, so changing the setting takes effect without a plugin update.
+* With older API versions that don't send a decision, the plugin keeps its built-in rule: manual redirects and catalog matches scoring 0.5 or higher get a 301, everything else a 302.
+* The "Send every redirect as a 301" setting still takes precedence over everything.
+* New: the API key now travels in an `Authorization: Bearer` header instead of the request address, so it no longer appears in web server, proxy or CDN logs.
+* New: ad measurement. When a visitor who hits a 404 came from a Google, Microsoft or Meta ad (gclid, msclkid or a paid `utm_medium`), the plugin tells no404 the ad network — only the category, never the click ID. These visits skip the local cache, so paid traffic that lands on a 404 is counted in full in your dashboard.
+
 = 1.0.1 =
 * Fixed: the connection test reported "unexpected response (HTTP 302)" on a fresh install. The bundled address, https://no404.tr, redirects to the www host, and the plugin did not follow it. The default is now https://www.no404.tr, sites upgrading from 1.0.0 are moved across automatically, and a redirect the plugin cannot follow now names the address to use instead of reporting an unexpected response.
 
@@ -162,6 +173,9 @@ It follows your WordPress language setting. English is the default, and translat
 * Multisite support.
 
 == Upgrade Notice ==
+
+= 1.0.2 =
+The 301/302 decision now follows the threshold you set in your no404 dashboard, the API key moves out of the request address into a header, and 404s from ad clicks are measured. Recommended for everyone.
 
 = 1.0.1 =
 Fixes the connection test failing with "unexpected response (HTTP 302)" on a fresh install. Recommended for everyone.

@@ -408,7 +408,13 @@ t_check(
 );
 t_check( 'timeout is 1.5 s', $GLOBALS['last_http_args']['timeout'], 1.5 );
 t_check( 'a canonical-host redirect is followed', $GLOBALS['last_http_args']['redirection'], 2 );
-t_check( 'the API key is in the URL', false !== strpos( $GLOBALS['last_http_url'], '/resolve/no404_TESTKEY?' ), true );
+t_check( 'the API key is NOT in the URL', false !== strpos( $GLOBALS['last_http_url'], 'no404_TESTKEY' ), false );
+t_check( 'the header route is used', false !== strpos( $GLOBALS['last_http_url'], '/api/v1/resolve?path=' ), true );
+t_check(
+	'the API key travels in the Authorization header',
+	isset( $GLOBALS['last_http_args']['headers']['Authorization'] ) ? $GLOBALS['last_http_args']['headers']['Authorization'] : '',
+	'Bearer no404_TESTKEY'
+);
 
 echo "\n=== A POST request is not handled ===\n";
 $GLOBALS['http_calls'] = 0;

@@ -22,6 +22,7 @@ interface No404_Http_Interface {
 	 * @param string $url        Full URL.
 	 * @param int    $timeout_ms Timeout in milliseconds.
 	 * @param string $user_agent User-Agent to send.
+	 * @param array  $headers    Extra request headers (name => value), e.g. Authorization.
 	 *
 	 * @return array{ok:bool,status:int,body:string,error:string,location?:string}
 	 *               ok=false → transport failure (DNS, timeout, TLS); status is 0.
@@ -29,5 +30,5 @@ interface No404_Http_Interface {
 	 *               location  → the Location header when the response is a 3xx the
 	 *                           transport did not follow; optional.
 	 */
-	public function get( $url, $timeout_ms, $user_agent );
+	public function get( $url, $timeout_ms, $user_agent, array $headers = array() );
 }
