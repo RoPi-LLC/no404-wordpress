@@ -71,7 +71,7 @@ class No404_Redirector {
 		// the raw click ID. Read from the raw URI, before the query string is dropped.
 		$ad = $this->client->detect_ad_category( $this->current_path() );
 
-		$result = $this->client->resolve( $path, $this->referrer(), $ad );
+		$result = $this->client->resolve( $path, $this->referrer(), $ad, $this->visitor() );
 		if ( null === $result || empty( $result['redirect'] ) ) {
 			return;
 		}
@@ -200,5 +200,56 @@ class No404_Redirector {
 		}
 
 		return esc_url_raw( wp_unslash( $_SERVER['HTTP_REFERER'] ) );
+	}
+
+	/**
+	 * Who hit the 404. The API request leaves from this server, so without this
+	 * no404 would log every 404 under the server's IP and the plugin's user agent.
+	 * The core truncates the IP to its network before sending (truncate_ip).
+	 *
+	 * @return array ip / user_agent / country.
+	 */
+	protected function visitor() {
+		$visitor = array(
+			'ip'         => $this->visitor_ip(),
+			'user_agent' => isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '',
+			'country'    => isset( $_SERVER['HTTP_CF_IPCOUNTRY'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_CF_IPCOUNTRY'] ) ) : '',
+		);
+
+		/**
+		 * Filter the visitor data sent to no404 (e.g. to read the IP from a proxy
+		 * header this plugin does not know). Return an empty array to send none.
+		 *
+		 * @param array $visitor ip / user_agent / country.
+		 */
+		$visitor = apply_filters( 'no404_visitor', $visitor );
+
+		return is_array( $visitor ) ? $visitor : array();
+	}
+
+	/**
+	 * The visitor's public IP. Behind Cloudflare or a reverse proxy REMOTE_ADDR is
+	 * the proxy, so the usual forwarding headers are read first. A visitor can
+	 * forge those, but the value only feeds that site's own statistics (and is
+	 * truncated anyway); no404's rate limit uses this server's real address.
+	 * Private and reserved addresses are never sent.
+	 *
+	 * @return string
+	 */
+	protected function visitor_ip() {
+		$public = FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE;
+
+		foreach ( array( 'HTTP_CF_CONNECTING_IP', 'HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP', 'REMOTE_ADDR' ) as $key ) {
+			if ( empty( $_SERVER[ $key ] ) ) {
+				continue;
+			}
+			$list  = explode( ',', sanitize_text_field( wp_unslash( $_SERVER[ $key ] ) ) );
+			$first = trim( $list[0] );
+			if ( false !== filter_var( $first, FILTER_VALIDATE_IP, $public ) ) {
+				return $first;
+			}
+		}
+
+		return '';
 	}
 }

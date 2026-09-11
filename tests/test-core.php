@@ -207,6 +207,58 @@ check(
 check( 'the API key travels in the Authorization header', $http->last_headers, array( 'Authorization' => 'Bearer testkey123' ) );
 check( 'the API key is NOT in the URL', false !== strpos( $http->last_url, 'testkey123' ), false );
 
+echo "\n=== Visitor data: truncated IP + UA, never the full IP ===\n";
+check( 'IPv4 -> last octet zeroed', $c->truncate_ip( '85.34.78.211' ), '85.34.78.0' );
+check( 'IPv6 -> first 48 bits', $c->truncate_ip( '2a01:4f8:1c1c:abcd::1' ), '2a01:4f8:1c1c::' );
+check( 'IPv4-mapped IPv6 -> IPv4', $c->truncate_ip( '::ffff:85.34.78.211' ), '85.34.78.0' );
+check( 'garbage -> empty', $c->truncate_ip( 'not-an-ip' ), '' );
+$http = new FakeHttp();
+$cl   = make_client( $http, new FakeCache() );
+$cl->resolve( '/visitor', '', '', array( 'ip' => '85.34.78.211', 'user_agent' => "Mozilla/5.0\r\nX-Evil: 1", 'country' => 'tr' ) );
+check(
+	'visitor headers are sent next to the key',
+	$http->last_headers,
+	array(
+		'Authorization'           => 'Bearer testkey123',
+		'X-No404-Visitor-IP'      => '85.34.78.0',
+		'X-No404-Visitor-UA'      => 'Mozilla/5.0X-Evil: 1',
+		'X-No404-Visitor-Country' => 'TR',
+	)
+);
+check( 'the full IP never leaves the site', false !== strpos( var_export( $http->last_headers, true ) . $http->last_url, '85.34.78.211' ), false );
+$cl->resolve( '/visitor-2', '', '', array( 'ip' => 'bad', 'country' => 'XX' ) );
+check( 'invalid visitor values are dropped', $http->last_headers, array( 'Authorization' => 'Bearer testkey123' ) );
+$cl->ping();
+check( 'the connection test sends no visitor data', $http->last_headers, array( 'Authorization' => 'Bearer testkey123' ) );
+
+echo "\n=== Visitor ID: site-keyed HMAC of the full IP ===\n";
+$http = new FakeHttp();
+$cl   = make_client( $http, new FakeCache(), array( 'visitor_secret' => 'site-secret-A' ) );
+$id_a = $cl->visitor_id( '85.34.78.211' );
+check( 'the ID is a 64-character hex HMAC', 1 === preg_match( '/^[a-f0-9]{64}$/', $id_a ), true );
+check( 'same IP -> same ID (unique counts work)', $cl->visitor_id( '85.34.78.211' ), $id_a );
+check( 'IPv4-mapped spelling -> same ID', $cl->visitor_id( '::ffff:85.34.78.211' ), $id_a );
+check( 'two spellings of one IPv6 -> same ID', $cl->visitor_id( '2a01:4f8::1' ), $cl->visitor_id( '2A01:04F8:0:0:0:0:0:1' ) );
+check( 'a neighbour in the same /24 -> a different ID', $cl->visitor_id( '85.34.78.212' ) !== $id_a, true );
+check(
+	'another site (another secret) -> a different ID',
+	make_client( new FakeHttp(), new FakeCache(), array( 'visitor_secret' => 'site-secret-B' ) )->visitor_id( '85.34.78.211' ) !== $id_a,
+	true
+);
+check( 'it is not a plain, brute-forceable hash of the IP', $id_a !== hash( 'sha256', '85.34.78.211' ) && $id_a !== hash( 'sha256', inet_pton( '85.34.78.211' ) ), true );
+check( 'no secret -> no ID', $c->visitor_id( '85.34.78.211' ), '' );
+check( 'garbage -> no ID', $cl->visitor_id( 'not-an-ip' ), '' );
+$cl->resolve( '/visitor-id', '', '', array( 'ip' => '85.34.78.211' ) );
+check(
+	'the ID travels next to the truncated IP',
+	$http->last_headers,
+	array(
+		'Authorization'      => 'Bearer testkey123',
+		'X-No404-Visitor-IP' => '85.34.78.0',
+		'X-No404-Visitor-Id' => $id_a,
+	)
+);
+
 echo "\n=== detect_ad_category (only the category leaves the site) ===\n";
 check( 'gclid -> google', $c->detect_ad_category( '/p?gclid=abc' ), 'google' );
 check( 'gbraid -> google', $c->detect_ad_category( '/p?gbraid=abc' ), 'google' );

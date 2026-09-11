@@ -70,6 +70,9 @@ class No404_Client {
 	/** Maximum path length the API accepts (matches ingestHitSchema). */
 	const MAX_PATH_LENGTH = 2048;
 
+	/** Maximum visitor User-Agent length the API keeps. */
+	const MAX_USER_AGENT_LENGTH = 512;
+
 	/** Circuit breaker key. */
 	const OUTAGE_KEY = 'outage';
 
@@ -124,6 +127,9 @@ class No404_Client {
 	/** @var string Client identity (User-Agent). */
 	protected $user_agent = 'no404-plugin';
 
+	/** @var string Site-specific secret for the visitor ID ('' = no ID is sent). */
+	protected $visitor_secret = '';
+
 	/**
 	 * @param array                 $config Ayarlar.
 	 * @param No404_Http_Interface  $http   HTTP adapter.
@@ -150,6 +156,9 @@ class No404_Client {
 		}
 		if ( isset( $config['user_agent'] ) ) {
 			$this->user_agent = (string) $config['user_agent'];
+		}
+		if ( isset( $config['visitor_secret'] ) ) {
+			$this->visitor_secret = (string) $config['visitor_secret'];
 		}
 		if ( ! empty( $config['allowed_hosts'] ) && is_array( $config['allowed_hosts'] ) ) {
 			foreach ( $config['allowed_hosts'] as $host ) {
@@ -188,13 +197,18 @@ class No404_Client {
 	 * paid click; answering them from the cache would leave them uncounted in the
 	 * dashboard. If no404 cannot be reached, the cached result is still used.
 	 *
+	 * VISITOR: the request leaves from this server, so without `$visitor` no404
+	 * would record every 404 under the server's own IP and the plugin's user agent.
+	 * See visitor_headers(): the IP is truncated to its network before it is sent.
+	 *
 	 * @param string $path     The path that returned 404.
 	 * @param string $referrer Where the visitor came from (optional).
 	 * @param string $ad       Ad category from detect_ad_category() ('' = not an ad click).
+	 * @param array  $visitor  ip / user_agent / country of the visitor (optional).
 	 *
 	 * @return array|null found/redirect/score/source, or null when there is no redirect.
 	 */
-	public function resolve( $path, $referrer = '', $ad = '' ) {
+	public function resolve( $path, $referrer = '', $ad = '', array $visitor = array() ) {
 		try {
 			if ( ! $this->is_configured() ) {
 				return null;
@@ -226,7 +240,7 @@ class No404_Client {
 				$this->build_url( $path, $referrer, $ad ),
 				$this->timeout_ms,
 				$this->user_agent,
-				$this->auth_headers()
+				array_merge( $this->auth_headers(), $this->visitor_headers( $visitor ) )
 			);
 
 			$result = $this->handle_response( $response, $key );
@@ -611,6 +625,107 @@ class No404_Client {
 	/** @return array The Authorization header carrying the API key. */
 	protected function auth_headers() {
 		return array( 'Authorization' => 'Bearer ' . $this->api_key );
+	}
+
+	/**
+	 * Visitor headers. The plugin's own User-Agent keeps identifying the
+	 * installation; these describe the visitor who hit the 404.
+	 *
+	 * PRIVACY: the full IP never leaves the site — only its network
+	 * (see truncate_ip) and a site-keyed HMAC of it (see visitor_id).
+	 * Invalid values are dropped, not sent.
+	 *
+	 * @param array $visitor ip / user_agent / country.
+	 * @return array Header name => value.
+	 */
+	protected function visitor_headers( array $visitor ) {
+		$headers = array();
+
+		$ip = isset( $visitor['ip'] ) ? $this->truncate_ip( $visitor['ip'] ) : '';
+		if ( '' !== $ip ) {
+			$headers['X-No404-Visitor-IP'] = $ip;
+		}
+
+		$id = isset( $visitor['ip'] ) ? $this->visitor_id( $visitor['ip'] ) : '';
+		if ( '' !== $id ) {
+			$headers['X-No404-Visitor-Id'] = $id;
+		}
+
+		$ua = isset( $visitor['user_agent'] ) ? preg_replace( '/[\x00-\x1F\x7F]/', '', (string) $visitor['user_agent'] ) : '';
+		$ua = trim( substr( (string) $ua, 0, self::MAX_USER_AGENT_LENGTH ) );
+		if ( '' !== $ua ) {
+			$headers['X-No404-Visitor-UA'] = $ua;
+		}
+
+		$country = isset( $visitor['country'] ) ? strtoupper( trim( (string) $visitor['country'] ) ) : '';
+		// Cloudflare sends "XX" when the country is unknown.
+		if ( 1 === preg_match( '/^[A-Z]{2}$/', $country ) && 'XX' !== $country ) {
+			$headers['X-No404-Visitor-Country'] = $country;
+		}
+
+		return $headers;
+	}
+
+	/**
+	 * Pseudonymous visitor ID: HMAC-SHA256 of the FULL IP, keyed with a secret
+	 * that only this site knows. It lets no404 count unique visitors exactly
+	 * (the truncated IP alone merges a whole /24), while no404 can neither
+	 * reverse it to an address (a plain hash of an IPv4 address can be brute
+	 * forced) nor match one visitor across two sites (each has its own secret).
+	 *
+	 * The packed address is hashed, so ::ffff:1.2.3.4 and 1.2.3.4 — or two
+	 * spellings of one IPv6 address — yield the same ID. No secret → ''.
+	 *
+	 * @param string $ip Raw IP address.
+	 * @return string 64 hex characters, or ''.
+	 */
+	public function visitor_id( $ip ) {
+		if ( '' === $this->visitor_secret ) {
+			return '';
+		}
+		$ip = trim( (string) $ip );
+		if ( preg_match( '/^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/i', $ip, $m ) ) {
+			$ip = $m[1];
+		}
+		if ( false === filter_var( $ip, FILTER_VALIDATE_IP ) ) {
+			return '';
+		}
+		$packed = inet_pton( $ip );
+		if ( false === $packed ) {
+			return '';
+		}
+
+		return hash_hmac( 'sha256', $packed, $this->visitor_secret );
+	}
+
+	/**
+	 * Truncates an IP address to its network: IPv4 → last octet zeroed
+	 * (85.34.78.0), IPv6 → first 48 bits (2a01:4f8:1c1c::). An IPv4-mapped IPv6
+	 * address counts as IPv4. Invalid input → ''.
+	 *
+	 * @param string $ip Raw IP address.
+	 * @return string
+	 */
+	public function truncate_ip( $ip ) {
+		$ip = trim( (string) $ip );
+		if ( preg_match( '/^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/i', $ip, $m ) ) {
+			$ip = $m[1];
+		}
+
+		if ( false !== filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ) {
+			return (string) preg_replace( '/\.\d+$/', '.0', $ip );
+		}
+
+		if ( false !== filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 ) ) {
+			$packed = inet_pton( $ip );
+			if ( false === $packed || 16 !== strlen( $packed ) ) {
+				return '';
+			}
+			$network = inet_ntop( substr( $packed, 0, 6 ) . str_repeat( "\0", 10 ) );
+			return false === $network ? '' : $network;
+		}
+
+		return '';
 	}
 
 	/**

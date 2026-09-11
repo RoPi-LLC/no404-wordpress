@@ -4,7 +4,7 @@ Tags: 404, redirect, 301, seo, broken links
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.2
+Stable tag: 1.0.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -71,12 +71,16 @@ A request is sent when a visitor hits a 404 page, and only then. Requests are no
 
 * The path that returned 404, for example `/old-product`. Query strings are stripped before sending.
 * The referring URL, taken from the HTTP `Referer` header, when the browser supplies one.
+* The visitor's IP address truncated to its network: the last part of an IPv4 address is set to zero (203.0.113.45 becomes 203.0.113.0), and only the first 48 bits of an IPv6 address are kept. Private and local addresses are not sent. This is what lets your dashboard tell bots from people and group requests by network.
+* A pseudonymous visitor ID: a keyed hash (HMAC-SHA256) of the visitor's IP address, computed on your server with a secret derived from your site's own security keys. no404 never receives the secret, so it cannot turn the ID back into an address or recognise the same visitor on another site. It only lets your dashboard count unique visitors.
+* The visitor's browser user agent (for example `Mozilla/5.0 (iPhone; …)`), used to classify the request as a bot or a browser and by device type.
+* The visitor's country code, only when your site is behind Cloudflare and it supplies one (`CF-IPCountry`).
 * Your site's home URL and the plugin version, sent in the User-Agent header to identify the installation.
 * Your API key, which identifies your account.
 
 **What is not sent**
 
-The plugin does not transmit the visitor's IP address, the visitor's user agent, cookies, session data, form contents, or any other personal data.
+The plugin never transmits the visitor's full IP address, cookies, session data, form contents, the query string or click IDs. Developers can change or remove the visitor data with the `no404_visitor` filter.
 
 **Service provider**
 
@@ -114,6 +118,10 @@ No. Results are cached for an hour by default, so the same URL costs at most one
 = Does the plugin send my visitors' click IDs to no404? =
 
 No. The query string never leaves your site. When a visit carries an ad click ID (gclid, msclkid) or a paid `utm_medium`, the plugin sends only the ad network — google, microsoft, meta or other.
+
+= Does the plugin send my visitors' IP addresses? =
+
+Only a truncated one. Since 1.0.3 the plugin sends the network part of the visitor's IP (203.0.113.0 rather than 203.0.113.45), a pseudonymous visitor ID (a hash of the address keyed with a secret only your site knows) and the browser's user agent, so the dashboard can separate bots from people and count unique visitors. The full address never leaves your site. Before 1.0.3 every 404 was recorded under your own server's address. You can change or remove this data with the `no404_visitor` filter.
 
 = It redirected someone to the wrong page. How do I fix that? =
 
@@ -153,6 +161,11 @@ It follows your WordPress language setting. English is the default, and translat
 
 == Changelog ==
 
+= 1.0.3 =
+* Fixed: every 404 in the no404 dashboard showed your own server's IP address and the plugin's user agent, because the lookup is made from your server. The plugin now forwards the visitor's user agent and truncated IP address in separate headers, so the dashboard's bot/browser/device breakdown and visitor counts work for WordPress sites too.
+* Privacy: the full IP address never leaves your site. Only its network is sent (the last part of an IPv4 address set to zero, the first 48 bits of an IPv6 address), plus a pseudonymous visitor ID keyed with a secret only your site knows, for unique-visitor counts. Private addresses are not sent. See the External services section.
+* New: the `no404_visitor` filter to change or remove the visitor data.
+
 = 1.0.2 =
 * New: the redirect status (301 or 302) now follows the threshold you choose in your no404 dashboard (site Settings → "Permanent (301) or temporary (302)?"). The no404 API sends its decision with every result and the plugin uses it, so changing the setting takes effect without a plugin update.
 * With older API versions that don't send a decision, the plugin keeps its built-in rule: manual redirects and catalog matches scoring 0.5 or higher get a 301, everything else a 302.
@@ -173,6 +186,9 @@ It follows your WordPress language setting. English is the default, and translat
 * Multisite support.
 
 == Upgrade Notice ==
+
+= 1.0.3 =
+The no404 dashboard stops showing your server's IP for every 404: the visitor's user agent and truncated IP address are now forwarded (never the full IP). Recommended for everyone.
 
 = 1.0.2 =
 The 301/302 decision now follows the threshold you set in your no404 dashboard, the API key moves out of the request address into a header, and 404s from ad clicks are measured. Recommended for everyone.

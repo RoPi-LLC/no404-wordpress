@@ -123,6 +123,7 @@ function set_transient( $key, $value, $ttl ) {
 }
 
 function home_url( $path = '' ) { return 'https://store.example' . $path; }
+function wp_salt( $scheme = 'auth' ) { return 'test-salt-' . $scheme; }
 function site_url( $path = '' ) { return 'https://store.example' . $path; }
 function content_url( $path = '' ) { return 'https://store.example/wp-content' . $path; }
 function plugin_dir_path( $file ) { return dirname( $file ) . '/'; }
@@ -415,6 +416,28 @@ t_check(
 	isset( $GLOBALS['last_http_args']['headers']['Authorization'] ) ? $GLOBALS['last_http_args']['headers']['Authorization'] : '',
 	'Bearer no404_TESTKEY'
 );
+
+echo "\n=== Visitor: truncated IP, UA and country travel in headers ===\n";
+$_SERVER['REMOTE_ADDR']          = '10.0.0.5'; // the reverse proxy
+$_SERVER['HTTP_X_FORWARDED_FOR'] = '85.34.78.211, 10.0.0.5';
+$_SERVER['HTTP_USER_AGENT']      = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0)';
+$_SERVER['HTTP_CF_IPCOUNTRY']    = 'TR';
+simulate( '/visitor-test', array( api_ok( $body ) ) );
+$no404_h = $GLOBALS['last_http_args']['headers'];
+t_check( 'IP from the proxy header, truncated', isset( $no404_h['X-No404-Visitor-IP'] ) ? $no404_h['X-No404-Visitor-IP'] : '', '85.34.78.0' );
+t_check( 'visitor user agent', isset( $no404_h['X-No404-Visitor-UA'] ) ? $no404_h['X-No404-Visitor-UA'] : '', 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0)' );
+t_check( 'visitor country', isset( $no404_h['X-No404-Visitor-Country'] ) ? $no404_h['X-No404-Visitor-Country'] : '', 'TR' );
+t_check( 'the full IP is nowhere in the request', false !== strpos( var_export( $GLOBALS['last_http_args'], true ) . $GLOBALS['last_http_url'], '85.34.78.211' ), false );
+t_check( 'the plugin still identifies itself', 0 === strpos( $GLOBALS['last_http_args']['user-agent'], 'no404-wordpress/' ), true );
+t_check(
+	'a site-keyed visitor ID of the full IP is sent',
+	isset( $no404_h['X-No404-Visitor-Id'] ) ? $no404_h['X-No404-Visitor-Id'] : '',
+	hash_hmac( 'sha256', inet_pton( '85.34.78.211' ), 'test-salt-no404_visitor|https://store.example/' )
+);
+unset( $_SERVER['HTTP_X_FORWARDED_FOR'] );
+simulate( '/visitor-private', array( api_ok( $body ) ) );
+t_check( 'a private address is never sent', isset( $GLOBALS['last_http_args']['headers']['X-No404-Visitor-IP'] ), false );
+unset( $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT'], $_SERVER['HTTP_CF_IPCOUNTRY'] );
 
 echo "\n=== A POST request is not handled ===\n";
 $GLOBALS['http_calls'] = 0;
