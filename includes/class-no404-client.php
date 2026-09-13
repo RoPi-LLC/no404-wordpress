@@ -597,6 +597,144 @@ class No404_Client {
 	}
 
 	/**
+	 * Which no404 site does the API key belong to? (`GET /api/v1/site`)
+	 *
+	 * The setup wizard compares the answer with this WordPress site. A key copied
+	 * from ANOTHER site in the same no404 account passes ping() — the key is valid —
+	 * but every target it returns is on the other domain, so the open-redirect
+	 * guard drops them all and nothing is ever redirected, silently.
+	 *
+	 * Unlike ping() this records no 404 event and uses no quota. Like ping() it
+	 * bypasses the cache and the circuit breaker.
+	 *
+	 * A no404 server that predates the endpoint answers 404 WITHOUT the JSON
+	 * `success:false` body an invalid key gets → 'unsupported'; the caller then
+	 * falls back to ping().
+	 *
+	 * @return array code/status/host/url/name/serving/reason/detail
+	 */
+	public function site_info() {
+		$out = array(
+			'code'    => 'unknown',
+			'status'  => 0,
+			'host'    => '',
+			'url'     => '',
+			'name'    => '',
+			'serving' => false,
+			'reason'  => '',
+			'detail'  => '',
+		);
+
+		if ( '' === $this->api_base ) {
+			$out['code'] = 'no_api_base';
+			return $out;
+		}
+		if ( '' === $this->api_key ) {
+			$out['code'] = 'no_api_key';
+			return $out;
+		}
+
+		$response = $this->http->get(
+			$this->api_base . '/api/v1/site',
+			max( 5000, $this->timeout_ms ),
+			$this->user_agent,
+			$this->auth_headers()
+		);
+
+		if ( empty( $response['ok'] ) ) {
+			$out['code']   = 'unreachable';
+			$out['detail'] = isset( $response['error'] ) ? (string) $response['error'] : '';
+			return $out;
+		}
+
+		$status        = isset( $response['status'] ) ? (int) $response['status'] : 0;
+		$out['status'] = $status;
+		$payload       = $this->decode( isset( $response['body'] ) ? $response['body'] : '' );
+
+		if ( $status >= 300 && $status < 400 ) {
+			$out['code']   = 'redirected';
+			$out['detail'] = isset( $response['location'] ) ? (string) $response['location'] : '';
+			return $out;
+		}
+
+		if ( 200 === $status && is_array( $payload ) && ! empty( $payload['success'] ) && isset( $payload['site'] ) && is_array( $payload['site'] ) ) {
+			$site = $payload['site'];
+
+			$out['url']     = isset( $site['url'] ) && is_string( $site['url'] ) ? $site['url'] : '';
+			$out['name']    = isset( $site['name'] ) && is_string( $site['name'] ) ? $site['name'] : '';
+			$out['host']    = isset( $site['host'] ) && is_string( $site['host'] ) ? strtolower( trim( $site['host'] ) ) : '';
+			$out['serving'] = ! empty( $site['serving'] );
+			$out['reason']  = isset( $site['reason'] ) && is_string( $site['reason'] ) ? $site['reason'] : '';
+
+			if ( '' === $out['host'] && '' !== $out['url'] ) {
+				$host        = wp_parse_url( $out['url'], PHP_URL_HOST );
+				$out['host'] = is_string( $host ) ? strtolower( $host ) : '';
+			}
+
+			$out['code'] = '' === $out['host'] ? 'unexpected' : 'ok';
+			return $out;
+		}
+
+		switch ( $status ) {
+			case 401:
+				$out['code'] = 'invalid_key';
+				break;
+			case 404:
+				$is_json_refusal = is_array( $payload ) && array_key_exists( 'success', $payload ) && false === $payload['success'];
+				$out['code']     = $is_json_refusal ? 'invalid_key' : 'unsupported';
+				break;
+			case 405:
+				$out['code'] = 'unsupported';
+				break;
+			case 429:
+				$out['code'] = 'rate_limited';
+				break;
+			default:
+				$out['code'] = $status >= 500 ? 'server_error' : 'unexpected';
+		}
+
+		return $out;
+	}
+
+	/**
+	 * Is `$host` this site (the hosts redirects may go to)?
+	 *
+	 * The www and bare forms count as the same site — no404 may hold either,
+	 * depending on how the Search Console property was written. With no allowed
+	 * hosts configured there is nothing to compare against, so it passes.
+	 *
+	 * @param string $host Host from site_info().
+	 * @return bool
+	 */
+	public function site_host_matches( $host ) {
+		$host = self::bare_host( $host );
+		if ( '' === $host ) {
+			return false;
+		}
+		if ( empty( $this->allowed_hosts ) ) {
+			return true;
+		}
+
+		foreach ( $this->allowed_hosts as $allowed ) {
+			if ( self::bare_host( $allowed ) === $host ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * @param string $host A host name.
+	 * @return string Lower case, without a leading "www.".
+	 */
+	protected static function bare_host( $host ) {
+		$host = strtolower( trim( (string) $host ) );
+
+		return ( 0 === strpos( $host, 'www.' ) ) ? substr( $host, 4 ) : $host;
+	}
+
+	/**
 	 * Builds the request URL.
 	 *
 	 * The API key is NOT part of the URL: it travels in the Authorization header

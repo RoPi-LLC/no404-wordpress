@@ -4,7 +4,7 @@ Tags: 404, redirect, 301, seo, broken links
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.3
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -67,6 +67,10 @@ A request is sent when a visitor hits a 404 page, and only then. Requests are no
 * the request is not a GET or HEAD request,
 * the service recently failed or the request limit was reached.
 
+Two more requests are made only when you ask for them in the admin: the connection test (a lookup like any other, listed in your dashboard) and, when you connect the plugin in the setup wizard, a check of which no404 site the API key belongs to. That check sends only the API key, is not recorded as a 404 and does not use quota.
+
+The setup wizard's "Create a free account" button opens no404's sign-up page with your site's domain in the address, so the right site is preselected there. Nothing is sent until you click it.
+
 **What is sent**
 
 * The path that returned 404, for example `/old-product`. Query strings are stripped before sending.
@@ -91,13 +95,12 @@ The service is operated by no404, https://no404.tr
 
 == Installation ==
 
-1. Install and activate the plugin.
-2. Create an account at https://no404.tr and add your site through Google Search Console.
-3. Open your site in the no404 dashboard, go to Integration, and copy the API key.
-4. In WordPress, go to Settings → no404, paste the key and save.
-5. Click "Test the connection" to confirm everything works.
+1. Install and activate the plugin. A short setup wizard opens.
+2. No account yet? The wizard's "Create a free account" button opens no404 with your site's address filled in. Add your site there through Google Search Console.
+3. Open your site in the no404 dashboard, go to Integration, copy the API key and paste it into the wizard. The wizard checks that the key belongs to this site before it saves it.
+4. Choose how redirects are sent, then try an old address on the last step.
 
-The API key is the only value you need to enter. The service address field is already filled in correctly.
+You can run the wizard again from Settings → no404, or skip it and paste the key on that page directly. The API key is the only value you need to enter; the service address field is already filled in correctly.
 
 The API key is used server side only and never appears in your site's HTML.
 
@@ -161,6 +164,11 @@ It follows your WordPress language setting. English is the default, and translat
 
 == Changelog ==
 
+= 1.1.0 =
+* New: a setup wizard opens once after activation. Create an account, paste your API key, choose how redirects are sent and try an old address, in four short steps. It does not open on bulk or network activation, for sites that already have a key, or ever again once you finish or skip it. You can rerun it from Settings → no404.
+* New: the wizard checks that the API key belongs to this site. A key copied from another site in the same no404 account used to pass the connection test and then silently redirect nothing, because every target it returned was on the other domain.
+* New: until the plugin is connected, the Plugins screen shows a notice with a link to the wizard. Dismissing it counts as skipping the wizard.
+
 = 1.0.3 =
 * Fixed: every 404 in the no404 dashboard showed your own server's IP address and the plugin's user agent, because the lookup is made from your server. The plugin now forwards the visitor's user agent and truncated IP address in separate headers, so the dashboard's bot/browser/device breakdown and visitor counts work for WordPress sites too.
 * Privacy: the full IP address never leaves your site. Only its network is sent (the last part of an IPv4 address set to zero, the first 48 bits of an IPv6 address), plus a pseudonymous visitor ID keyed with a secret only your site knows, for unique-visitor counts. Private addresses are not sent. See the External services section.
@@ -186,6 +194,9 @@ It follows your WordPress language setting. English is the default, and translat
 * Multisite support.
 
 == Upgrade Notice ==
+
+= 1.1.0 =
+Adds a one-time setup wizard and catches API keys that belong to a different site. Sites that are already connected see no change.
 
 = 1.0.3 =
 The no404 dashboard stops showing your server's IP for every 404: the visitor's user agent and truncated IP address are now forwarded (never the full IP). Recommended for everyone.

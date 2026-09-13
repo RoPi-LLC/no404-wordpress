@@ -46,7 +46,8 @@ $GLOBALS['wp_transients'] = array();
 $GLOBALS['wp_redirects']  = array();
 $GLOBALS['http_queue']    = array();
 $GLOBALS['http_calls']    = 0;
-$GLOBALS['wp_state']      = array( 'is_404' => true, 'is_admin' => false );
+$GLOBALS['wp_state']      = array( 'is_404' => true, 'is_admin' => false, 'user_id' => 1, 'can' => true, 'locale' => 'en_US' );
+$GLOBALS['wp_activation_hooks'] = array();
 
 function add_action( $hook, $callback, $priority = 10, $args = 1 ) {
 	$GLOBALS['wp_actions'][ $hook ][ $priority ][] = $callback;
@@ -143,6 +144,12 @@ function is_customize_preview() { return false; }
 function wp_doing_ajax() { return false; }
 function wp_doing_cron() { return false; }
 function add_settings_error() {}
+function register_activation_hook( $file, $callback ) { $GLOBALS['wp_activation_hooks'][] = $callback; }
+function delete_transient( $key ) { unset( $GLOBALS['wp_transients'][ $key ] ); return true; }
+function get_current_user_id() { return $GLOBALS['wp_state']['user_id']; }
+function current_user_can( $cap ) { return $GLOBALS['wp_state']['can']; }
+function is_network_admin() { return false; }
+function get_user_locale() { return $GLOBALS['wp_state']['locale']; }
 function __( $text, $domain = '' ) { return $text; }
 /**
  * The real `esc_url_raw` returns an EMPTY string for disallowed schemes; if the
@@ -248,6 +255,9 @@ class WP_Textdomain_Registry {
 $GLOBALS['wp_textdomain_registry'] = new WP_Textdomain_Registry();
 
 require __DIR__ . '/../no404.php';
+// is_admin() is false here, so boot() did not load the admin class; the wizard
+// borrows its messages (No404_Admin::describe).
+require_once __DIR__ . '/../includes/class-no404-admin.php';
 
 echo "\n=== Plugin loaded; are the hooks registered? ===\n";
 t_check( 'init hook is registered', isset( $GLOBALS['wp_actions']['init'] ), true );
@@ -530,6 +540,144 @@ t_check(
 	No404_Options::exclude_prefixes(),
 	array( '/campaign', '/old-blog', '/temporary' )
 );
+
+echo "\n=== Setup wizard: one-shot activation redirect ===\n";
+t_check( 'the activation hook is registered', count( $GLOBALS['wp_activation_hooks'] ), 1 );
+t_check( 'it points at the wizard', $GLOBALS['wp_activation_hooks'][0], array( 'No404_Wizard', 'on_activate' ) );
+
+$GLOBALS['wp_options']['no404_settings']['api_key'] = '';
+unset( $GLOBALS['wp_options']['no404_wizard'] );
+$GLOBALS['wp_transients'] = array();
+$no404_wizard_url         = 'https://store.example/wp-admin/index.php?page=no404-setup';
+$wizard                   = new No404_Wizard();
+
+No404_Wizard::on_activate( false );
+t_check( 'activation stores a redirect for the activating admin', get_transient( No404_Wizard::REDIRECT_TRANSIENT ), 1 );
+$GLOBALS['wp_redirects'] = array();
+$wizard->maybe_redirect();
+t_check( 'the next admin load goes to the wizard', isset( $GLOBALS['wp_redirects'][0] ) ? $GLOBALS['wp_redirects'][0]['location'] : '', $no404_wizard_url );
+t_check( 'the redirect is used up', get_transient( No404_Wizard::REDIRECT_TRANSIENT ), false );
+$GLOBALS['wp_redirects'] = array();
+$wizard->maybe_redirect();
+t_check( 'the load after that stays put', count( $GLOBALS['wp_redirects'] ), 0 );
+
+No404_Wizard::on_activate( false );
+$_GET['activate-multi']  = 'true';
+$GLOBALS['wp_redirects'] = array();
+$wizard->maybe_redirect();
+unset( $_GET['activate-multi'] );
+t_check( 'bulk activation: no redirect', count( $GLOBALS['wp_redirects'] ), 0 );
+t_check( 'bulk activation: the redirect is discarded, not postponed', get_transient( No404_Wizard::REDIRECT_TRANSIENT ), false );
+
+No404_Wizard::on_activate( true );
+t_check( 'network activation stores nothing', get_transient( No404_Wizard::REDIRECT_TRANSIENT ), false );
+
+No404_Wizard::on_activate( false );
+$GLOBALS['wp_state']['user_id'] = 2;
+$GLOBALS['wp_redirects']        = array();
+$wizard->maybe_redirect();
+t_check( 'another admin is not redirected', count( $GLOBALS['wp_redirects'] ), 0 );
+t_check( 'and does not use up the activating admin\'s redirect', get_transient( No404_Wizard::REDIRECT_TRANSIENT ), 1 );
+$GLOBALS['wp_state']['user_id'] = 1;
+
+$GLOBALS['wp_state']['can'] = false;
+$GLOBALS['wp_redirects']    = array();
+$wizard->maybe_redirect();
+t_check( 'a user without manage_options is not redirected', count( $GLOBALS['wp_redirects'] ), 0 );
+$GLOBALS['wp_state']['can'] = true;
+
+$GLOBALS['wp_options']['no404_settings']['api_key'] = 'no404_ABCDEFGH1234';
+$GLOBALS['wp_transients']                           = array();
+No404_Wizard::on_activate( false );
+t_check( 'a site that already has a key is not sent to the wizard', get_transient( No404_Wizard::REDIRECT_TRANSIENT ), false );
+t_check( 'an upgraded 1.0.x install counts as set up', No404_Wizard::is_completed(), true );
+
+$GLOBALS['wp_options']['no404_settings']['api_key'] = '';
+No404_Wizard::mark_completed();
+No404_Wizard::on_activate( false );
+t_check( 'after finishing or skipping, re-activation does not reopen it', get_transient( No404_Wizard::REDIRECT_TRANSIENT ), false );
+t_check( 'wizard progress is NOT kept in the settings option', isset( $GLOBALS['wp_options']['no404_settings']['completed'] ), false );
+unset( $GLOBALS['wp_options']['no404_wizard'] );
+
+echo "\n=== Setup wizard: connecting checks which site the key is for ===\n";
+function no404_site_json( $host, $serving = true, $reason = null ) {
+	return api_ok(
+		json_encode(
+			array(
+				'success' => true,
+				'site'    => array( 'url' => 'https://' . $host, 'host' => $host, 'name' => 'Shop', 'serving' => $serving, 'reason' => $reason ),
+			)
+		)
+	);
+}
+
+$GLOBALS['wp_transients'] = array();
+$GLOBALS['http_calls']    = 0;
+$GLOBALS['http_queue']    = array( no404_site_json( 'other-shop.example' ) );
+$res = $wizard->connect( '  no404_WRONGSITE1  ' );
+t_check( 'a key for another site is refused', $res['ok'], false );
+t_check( 'and not saved', No404_Options::get( 'api_key' ), '' );
+t_check( 'the message names both sites', false !== strpos( $res['message'], 'other-shop.example' ) && false !== strpos( $res['message'], 'store.example' ), true );
+t_check( 'the site endpoint was asked', false !== strpos( $GLOBALS['last_http_url'], '/api/v1/site' ), true );
+t_check( 'with the trimmed key in the Authorization header', $GLOBALS['last_http_args']['headers']['Authorization'], 'Bearer no404_WRONGSITE1' );
+t_check( 'the key is not in the URL', false !== strpos( $GLOBALS['last_http_url'], 'WRONGSITE' ), false );
+
+$GLOBALS['http_calls'] = 0;
+$GLOBALS['http_queue'] = array( no404_site_json( 'www.store.example' ) );
+$res = $wizard->connect( 'no404_RIGHTSITE1' );
+t_check( 'the www form of this site is accepted', $res['ok'], true );
+t_check( 'the key is saved', No404_Options::get( 'api_key' ), 'no404_RIGHTSITE1' );
+t_check( 'one request only: no connection test, no quota used', $GLOBALS['http_calls'], 1 );
+t_check( 'redirecting is switched on', No404_Options::get( 'enabled' ), 1 );
+
+$GLOBALS['http_queue'] = array( array( 'response' => array( 'code' => 404 ), 'body' => '{"success":false,"message":"x"}' ) );
+$res = $wizard->connect( 'no404_BADKEY0001' );
+t_check( 'an invalid key is refused', $res['ok'], false );
+t_check( 'with the invalid-key message', false !== strpos( $res['message'], 'Invalid API key' ), true );
+t_check( 'the previous key is kept', No404_Options::get( 'api_key' ), 'no404_RIGHTSITE1' );
+
+$GLOBALS['http_calls'] = 0;
+$GLOBALS['http_queue'] = array(
+	array( 'response' => array( 'code' => 404 ), 'body' => '<!DOCTYPE html><title>404</title>' ),
+	api_ok( '{"success":true,"found":false,"redirect":null,"score":0,"source":"NONE"}' ),
+);
+$res = $wizard->connect( 'no404_OLDSERVER1' );
+t_check( 'an older no404 server falls back to the connection test', $res['ok'], true );
+t_check( 'two requests: the site endpoint, then the test', $GLOBALS['http_calls'], 2 );
+t_check( 'the key is saved', No404_Options::get( 'api_key' ), 'no404_OLDSERVER1' );
+
+$GLOBALS['http_queue'] = array( no404_site_json( 'store.example' ) );
+$res = $wizard->connect( '' );
+t_check( 'an empty field re-checks the saved key', $GLOBALS['last_http_args']['headers']['Authorization'], 'Bearer no404_OLDSERVER1' );
+t_check( '… and it passes', $res['ok'], true );
+
+$GLOBALS['http_queue'] = array( no404_site_json( 'store.example' ) );
+$wizard->connect( No404_Options::masked_key() );
+t_check( 'the masked value re-checks the saved key too', $GLOBALS['last_http_args']['headers']['Authorization'], 'Bearer no404_OLDSERVER1' );
+
+$GLOBALS['wp_options']['no404_settings']['api_key'] = '';
+$GLOBALS['http_calls']                              = 0;
+$res = $wizard->connect( '' );
+t_check( 'nothing pasted, nothing saved: refused without a request', array( $res['ok'], $GLOBALS['http_calls'] ), array( false, 0 ) );
+
+echo "\n=== Setup wizard: behaviour step and links ===\n";
+$wizard->set_behaviour( true );
+t_check( 'force 301 is stored through the sanitiser', No404_Options::get( 'force_301' ), 1 );
+$wizard->set_behaviour( false );
+t_check( 'following the dashboard clears it', No404_Options::get( 'force_301' ), 0 );
+
+t_check( 'paused site → a warning', '' !== No404_Wizard::serving_warning( array( 'serving' => false, 'reason' => 'paused' ) ), true );
+t_check( 'serving site → no warning', No404_Wizard::serving_warning( array( 'serving' => true, 'reason' => '' ) ), '' );
+
+$GLOBALS['wp_options']['no404_settings']['api_base'] = 'https://www.no404.tr';
+t_check( 'sign-up link hands over the site (English)', No404_Wizard::signup_url(), 'https://www.no404.tr/en/register?site=store.example' );
+$GLOBALS['wp_state']['locale'] = 'tr_TR';
+t_check( 'sign-up link in Turkish for a Turkish admin', No404_Wizard::signup_url(), 'https://www.no404.tr/tr/register?site=store.example' );
+$GLOBALS['wp_state']['locale'] = 'en_US';
+
+t_check( 'the host check ignores www and case', no404()->client()->site_host_matches( 'WWW.Store.Example' ), true );
+t_check( 'the host check rejects a lookalike', no404()->client()->site_host_matches( 'store.example.evil.com' ), false );
+t_check( 'uninstall removes the wizard option', false !== strpos( file_get_contents( __DIR__ . '/../uninstall.php' ), "delete_option( 'no404_wizard' )" ), true );
 
 echo "\n----------------------------------------\n";
 echo "PASS: {$GLOBALS['no404_test']['pass']}   FAIL: {$GLOBALS['no404_test']['fail']}\n";

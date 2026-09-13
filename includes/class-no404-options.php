@@ -143,6 +143,37 @@ class No404_Options {
 	}
 
 	/**
+	 * Strips an API key down to the characters no404 issues keys with.
+	 *
+	 * One definition for the settings screen and the setup wizard: the wizard
+	 * checks the cleaned key with no404 before saving it, so the key it checked is
+	 * the key that gets stored.
+	 *
+	 * @param string $raw Pasted value.
+	 * @return string
+	 */
+	public static function clean_key( $raw ) {
+		return (string) preg_replace( '/[^A-Za-z0-9\-_]/', '', trim( (string) $raw ) );
+	}
+
+	/**
+	 * Changes some settings and stores the result.
+	 *
+	 * Every write outside the Settings API (the setup wizard) goes through here, so
+	 * it passes the same sanitize() as the settings screen — two validation paths
+	 * would drift apart without anyone noticing.
+	 *
+	 * @param array $changes Setting name => new value.
+	 * @return array The stored settings.
+	 */
+	public static function save( array $changes ) {
+		$clean = self::sanitize( array_merge( self::all(), $changes ) );
+		update_option( self::OPTION, $clean );
+
+		return $clean;
+	}
+
+	/**
 	 * Sanitises the raw input coming from a Settings API save.
 	 *
 	 * @param mixed $input Raw POST data.
@@ -186,7 +217,7 @@ class No404_Options {
 		if ( '' === $api_key || false !== strpos( $api_key, self::MASK ) ) {
 			$clean['api_key'] = $current['api_key'];
 		} else {
-			$clean['api_key'] = preg_replace( '/[^A-Za-z0-9\-_]/', '', $api_key );
+			$clean['api_key'] = self::clean_key( $api_key );
 		}
 
 		$clean['cache_ttl'] = isset( $input['cache_ttl'] )

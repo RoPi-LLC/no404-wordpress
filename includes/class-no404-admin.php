@@ -240,6 +240,16 @@ class No404_Admin {
 			return;
 		}
 
+		self::enqueue_test_script();
+	}
+
+	/**
+	 * The connection-test script. Shared with the setup wizard's last step, which
+	 * uses the same element IDs (no404-test-button / -path / -result).
+	 *
+	 * @return void
+	 */
+	public static function enqueue_test_script() {
 		wp_enqueue_script(
 			'no404-admin',
 			plugins_url( 'assets/admin.js', NO404_PLUGIN_FILE ),
@@ -272,6 +282,7 @@ class No404_Admin {
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'no404 – Auto 404 Redirect', 'no404-auto-404-redirect' ); ?></h1>
+			<p><a href="<?php echo esc_url( No404_Wizard::url() ); ?>"><?php esc_html_e( 'Run the setup wizard', 'no404-auto-404-redirect' ); ?></a></p>
 
 			<?php if ( ! $configured ) : ?>
 				<div class="notice notice-warning">
@@ -381,12 +392,13 @@ class No404_Admin {
 	 * Turns a ping result into a message a human can read.
 	 *
 	 * The user must be able to tell what is wrong from the settings screen, so
-	 * 404, 403 and 429 each get their own explanation.
+	 * 404, 403 and 429 each get their own explanation. The setup wizard shows the
+	 * same messages for No404_Client::site_info(), which uses the same codes.
 	 *
-	 * @param array $result Output of No404_Client::ping.
+	 * @param array $result Output of No404_Client::ping or ::site_info.
 	 * @return string
 	 */
-	protected static function describe( array $result ) {
+	public static function describe( array $result ) {
 		$detail = isset( $result['detail'] ) ? trim( (string) $result['detail'] ) : '';
 
 		switch ( $result['code'] ) {

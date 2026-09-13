@@ -8,8 +8,8 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-11 08:55+0000\n"
-"PO-Revision-Date: 2026-09-11 08:55+0000\n"
+"POT-Creation-Date: 2026-09-13 10:05+0000\n"
+"PO-Revision-Date: 2026-09-13 10:05+0000\n"
 "Language: tr_TR\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 "X-Domain: no404-auto-404-redirect\n"
@@ -18,7 +18,7 @@ msgstr ""
 msgid "Settings"
 msgstr "Ayarlar"
 
-#: class-no404-admin.php:50 class-no404-admin.php:274
+#: class-no404-admin.php:50 class-no404-admin.php:284
 msgid "no404 – Auto 404 Redirect"
 msgstr "no404 – Otomatik 404 Yönlendirme"
 
@@ -38,7 +38,7 @@ msgstr "Davranış"
 msgid "no404 address"
 msgstr "no404 adresi"
 
-#: class-no404-admin.php:86
+#: class-no404-admin.php:86 class-no404-wizard.php:623
 msgid "API key"
 msgstr "API anahtarı"
 
@@ -74,11 +74,11 @@ msgstr "Önbellek, aynı ölü adresi tekrar tekrar çeken botların aylık olay
 msgid "You should not need to touch this — the default, %s, is the right address. Change it only if you host no404 on your own server. Leave the field empty to restore the default."
 msgstr "Bu alana dokunmanız gerekmez — varsayılan %s doğru adrestir. Yalnızca no404'ü kendi sunucunuzda barındırıyorsanız değiştirin. Alanı boş bırakırsanız varsayılana döner."
 
-#: class-no404-admin.php:158
+#: class-no404-admin.php:158 class-no404-wizard.php:624
 msgid "Paste your key"
 msgstr "Anahtarı yapıştırın"
 
-#: class-no404-admin.php:164
+#: class-no404-admin.php:164 class-no404-wizard.php:632
 msgid "Saved key: %s — leave this field empty to keep it."
 msgstr "Kayıtlı anahtar: %s — değiştirmek istemiyorsanız alanı boş bırakın."
 
@@ -86,7 +86,7 @@ msgstr "Kayıtlı anahtar: %s — değiştirmek istemiyorsanız alanı boş bır
 msgid "Apply no404 redirects on pages that are not found"
 msgstr "Bulunamayan sayfalarda no404 yönlendirmesini uygula"
 
-#: class-no404-admin.php:181
+#: class-no404-admin.php:181 class-no404-wizard.php:663
 msgid "Send every match as a 301 (permanent)"
 msgstr "Tüm eşleşmeleri 301 (kalıcı) olarak gönder"
 
@@ -114,111 +114,255 @@ msgstr "no404 bu süre içinde yanıt vermezse istek iptal edilir ve siteniz ken
 msgid "One path prefix per line. URLs starting with these prefixes are never sent to no404. Static files (.css, .js, .png …) and paths such as /wp-admin and /wp-json are excluded automatically."
 msgstr "Her satıra bir yol öneki. Bu öneklerle başlayan adresler no404'e hiç sorulmaz. Statik dosyalar (.css, .js, .png …) ve /wp-admin, /wp-json gibi yollar zaten otomatik hariç tutulur."
 
-#: class-no404-admin.php:258
+#: class-no404-admin.php:268
 msgid "Testing…"
 msgstr "Test ediliyor…"
 
-#: class-no404-admin.php:259
+#: class-no404-admin.php:269
 msgid "The test could not be completed. Reload the page and try again."
 msgstr "Test tamamlanamadı. Sayfayı yenileyip tekrar deneyin."
 
-#: class-no404-admin.php:278
+#: class-no404-admin.php:285 class-no404-wizard.php:415
+msgid "Run the setup wizard"
+msgstr "Kurulum sihirbazını çalıştır"
+
+#: class-no404-admin.php:289
 msgid "The plugin is not running yet: no API key has been entered."
 msgstr "Eklenti henüz çalışmıyor: API anahtarı girilmemiş."
 
-#: class-no404-admin.php:282
+#: class-no404-admin.php:293
 msgid "Redirecting is switched off. 404 pages are shown as they are."
 msgstr "Yönlendirme kapalı. 404 sayfaları olduğu gibi gösteriliyor."
 
-#: class-no404-admin.php:286
+#: class-no404-admin.php:297 class-no404-wizard.php:697
 msgid "Active. Pages that are not found are redirected server-side."
 msgstr "Etkin. Bulunamayan sayfalar sunucu tarafında yönlendiriliyor."
 
-#: class-no404-admin.php:300
+#: class-no404-admin.php:311
 msgid "Connection test"
 msgstr "Bağlantı testi"
 
-#: class-no404-admin.php:302
+#: class-no404-admin.php:313
 msgid "Sends a real request to no404 using your saved settings. Save your changes first."
 msgstr "Kayıtlı ayarlarla no404'e gerçek bir istek gönderir. Önce değişikliklerinizi kaydedin."
 
-#: class-no404-admin.php:308
+#: class-no404-admin.php:319 class-no404-wizard.php:705
 msgid "Path to test"
 msgstr "Test edilecek yol"
 
-#: class-no404-admin.php:313
+#: class-no404-admin.php:324 class-no404-wizard.php:709
 msgid "Test the connection"
 msgstr "Bağlantıyı test et"
 
-#: class-no404-admin.php:330
+#: class-no404-admin.php:341 class-no404-wizard.php:458
 msgid "You do not have permission to do this."
 msgstr "Yetkiniz yok."
 
-#: class-no404-admin.php:340
+#: class-no404-admin.php:351
 msgid "The client could not be initialised."
 msgstr "İstemci başlatılamadı."
 
-#: class-no404-admin.php:397
+#: class-no404-admin.php:409
 msgid "Connection succeeded. Suggested target for this path: %1$s (source: %2$s, score: %3$s)."
 msgstr "Bağlantı başarılı. Bu yol için önerilen hedef: %1$s (kaynak: %2$s, skor: %3$s)."
 
-#: class-no404-admin.php:404
+#: class-no404-admin.php:416
 msgid "Connection succeeded. Your API key is valid; no match was found for this test path, which is what we expect."
 msgstr "Bağlantı başarılı. API anahtarınız geçerli; bu test yolu için bir eşleşme bulunamadı (beklenen davranış)."
 
-#: class-no404-admin.php:407
+#: class-no404-admin.php:419
 msgid "No API key has been entered. Save your key and try again."
 msgstr "API anahtarı girilmemiş. Anahtarı kaydedip tekrar deneyin."
 
-#: class-no404-admin.php:410
+#: class-no404-admin.php:422
 msgid "The no404 address is empty."
 msgstr "no404 adresi boş."
 
-#: class-no404-admin.php:413
+#: class-no404-admin.php:425
 msgid "Invalid API key (404). Copy the key from the site settings page in your no404 dashboard; if you rotated the key recently, enter the new one here as well."
 msgstr "Geçersiz API anahtarı (404). no404 panelindeki site ayarlarından anahtarı kopyalayın; anahtarı yakın zamanda yenilediyseniz buraya da yenisini girin."
 
-#: class-no404-admin.php:419
+#: class-no404-admin.php:431
 msgid "Access denied (403): %s. Your subscription may be inactive, monitoring for this site may be paused, or your account may be suspended."
 msgstr "Erişim reddedildi (403): %s. Aboneliğiniz pasif olabilir, site izleme duraklatılmış olabilir veya hesabınız askıya alınmış olabilir."
 
-#: class-no404-admin.php:422
+#: class-no404-admin.php:434
 msgid "Access denied (403). Your subscription may be inactive, monitoring for this site may be paused, or your account may be suspended."
 msgstr "Erişim reddedildi (403). Aboneliğiniz pasif olabilir, site izleme duraklatılmış olabilir veya hesabınız askıya alınmış olabilir."
 
-#: class-no404-admin.php:425
+#: class-no404-admin.php:437
 msgid "Rate limit exceeded, or your monthly event quota is used up (429). Check your quota in the no404 dashboard; if you sent many requests in a short time, try again in a minute."
 msgstr "İstek limiti aşıldı ya da aylık olay kotanız doldu (429). Kotanızı no404 panelinden kontrol edin; kısa sürede çok istek gönderdiyseniz bir dakika sonra tekrar deneyin."
 
-#: class-no404-admin.php:428
+#: class-no404-admin.php:440
 msgid "The test path is invalid (422). Enter a path that starts with \"/\"."
 msgstr "Test yolu geçersiz (422). \"/\" ile başlayan bir yol girin."
 
-#: class-no404-admin.php:434
+#: class-no404-admin.php:446
 msgid "Could not reach the no404 server: %s. Make sure your server is allowed to make outbound HTTPS requests."
 msgstr "no404 sunucusuna ulaşılamadı: %s. Sunucunuzun dışarıya HTTPS isteği yapabildiğinden emin olun."
 
-#: class-no404-admin.php:437
+#: class-no404-admin.php:449
 msgid "Could not reach the no404 server. Make sure your server is allowed to make outbound HTTPS requests."
 msgstr "no404 sunucusuna ulaşılamadı. Sunucunuzun dışarıya HTTPS isteği yapabildiğinden emin olun."
 
-#: class-no404-admin.php:445
+#: class-no404-admin.php:457
 msgid "The no404 address redirects somewhere else. Enter %s in the \"no404 address\" field, save, and test again."
 msgstr "no404 adresi başka bir adrese yönlendiriyor. Ayarlardaki no404 adresi alanına %s yazıp kaydedin ve tekrar test edin."
 
-#: class-no404-admin.php:448
+#: class-no404-admin.php:460
 msgid "The no404 address redirects somewhere else, so no answer could be read. Check the address in the settings — it is usually the www form of the domain."
 msgstr "no404 adresi başka bir adrese yönlendirdiği için yanıt okunamadı. Ayarlardaki adresi kontrol edin — bu adres genellikle alan adının www ile başlayan biçimidir."
 
-#: class-no404-admin.php:451
+#: class-no404-admin.php:463
 msgid "no404 hit a temporary error (5xx). Your site is unaffected; try again shortly."
 msgstr "no404 tarafında geçici bir hata oluştu (5xx). Siteniz etkilenmez; birazdan tekrar deneyin."
 
-#: class-no404-admin.php:456
+#: class-no404-admin.php:468
 msgid "Unexpected response (HTTP %d)."
 msgstr "Beklenmeyen yanıt (HTTP %d)."
 
-#: class-no404-options.php:177
+#: class-no404-options.php:208
 msgid "The no404 address must be a valid http(s) URL. The previous value has been kept. Leave the field empty to restore the default."
 msgstr "no404 adresi geçerli bir http(s) URL olmalı. Önceki değer korundu. Varsayılana dönmek için alanı boş bırakın."
+
+#: class-no404-wizard.php:229
+msgid "Paste your API key first."
+msgstr "Önce API anahtarınızı yapıştırın."
+
+#: class-no404-wizard.php:256
+msgid "This key belongs to %1$s, but this WordPress site is %2$s. Copy this site's key from its Integration tab in the no404 dashboard. If you are sure, you can still save the key on the settings page."
+msgstr "Bu anahtar %1$s sitesine ait, ancak bu WordPress sitesi %2$s. Bu sitenin anahtarını no404 panelindeki Entegrasyon sekmesinden kopyalayın. Eminseniz anahtarı yine de ayarlar sayfasından kaydedebilirsiniz."
+
+#: class-no404-wizard.php:269
+msgid "Connected to %s."
+msgstr "%s sitesine bağlandı."
+
+#: class-no404-wizard.php:341 class-no404-wizard.php:342
+msgid "no404 setup"
+msgstr "no404 kurulumu"
+
+#: class-no404-wizard.php:413
+msgid "no404 is installed but not connected yet."
+msgstr "no404 kurulu ama henüz bağlanmadı."
+
+#: class-no404-wizard.php:417
+msgid "Dismiss"
+msgstr "Kapat"
+
+#: class-no404-wizard.php:529
+msgid "Welcome"
+msgstr "Hoş geldiniz"
+
+#: class-no404-wizard.php:530 class-no404-wizard.php:640
+msgid "Connect"
+msgstr "Bağlan"
+
+#: class-no404-wizard.php:531
+msgid "Redirects"
+msgstr "Yönlendirmeler"
+
+#: class-no404-wizard.php:532
+msgid "Done"
+msgstr "Bitti"
+
+#: class-no404-wizard.php:573
+msgid "Skip setup"
+msgstr "Kurulumu atla"
+
+#: class-no404-wizard.php:600
+msgid "Welcome to no404"
+msgstr "no404'e hoş geldiniz"
+
+#: class-no404-wizard.php:601
+msgid "When a visitor lands on a page that no longer exists, no404 finds the closest live page on your site and sends them there with a real server-side 301. There are no redirect rules to write."
+msgstr "Ziyaretçi artık var olmayan bir sayfaya düştüğünde no404 sitenizdeki en yakın canlı sayfayı bulur ve ziyaretçiyi gerçek bir sunucu tarafı 301 ile oraya gönderir. Yönlendirme kuralı yazmanız gerekmez."
+
+#: class-no404-wizard.php:602
+msgid "no404 is a hosted service, so the plugin needs a free no404 account and an API key. Setup takes about two minutes."
+msgstr "no404 barındırılan bir hizmettir; eklentinin çalışması için ücretsiz bir no404 hesabı ve API anahtarı gerekir. Kurulum yaklaşık iki dakika sürer."
+
+#: class-no404-wizard.php:604
+msgid "Create a free account"
+msgstr "Ücretsiz hesap aç"
+
+#: class-no404-wizard.php:605
+msgid "I already have an account"
+msgstr "Hesabım var"
+
+#: class-no404-wizard.php:607
+msgid "The sign-up page opens in a new tab with this site's address filled in. Add the site there, then come back to this tab."
+msgstr "Kayıt sayfası, bu sitenin adresi doldurulmuş olarak yeni sekmede açılır. Siteyi orada ekleyin, sonra bu sekmeye dönün."
+
+#: class-no404-wizard.php:615
+msgid "Connect your site"
+msgstr "Sitenizi bağlayın"
+
+#: class-no404-wizard.php:616
+msgid "In your no404 dashboard, open this site and go to the Integration tab. Copy the API key from the WordPress card and paste it below."
+msgstr "no404 panelinde bu siteyi açıp Entegrasyon sekmesine gidin. WordPress kartındaki API anahtarını kopyalayıp aşağıya yapıştırın."
+
+#: class-no404-wizard.php:617 class-no404-wizard.php:714
+msgid "Open the no404 dashboard"
+msgstr "no404 panelini aç"
+
+#: class-no404-wizard.php:641 class-no404-wizard.php:669
+msgid "Back"
+msgstr "Geri"
+
+#: class-no404-wizard.php:651
+msgid "How should redirects be sent?"
+msgstr "Yönlendirmeler nasıl gönderilsin?"
+
+#: class-no404-wizard.php:658
+msgid "Follow my no404 dashboard (recommended)"
+msgstr "no404 panelimdeki ayara uy (önerilen)"
+
+#: class-no404-wizard.php:659
+msgid "Confident matches and your own redirects get a permanent 301, uncertain guesses a temporary 302. You can change the threshold later in your no404 dashboard without touching WordPress."
+msgstr "Güçlü eşleşmeler ve kendi tanımladığınız yönlendirmeler kalıcı 301, belirsiz tahminler geçici 302 olarak gönderilir. Eşiği daha sonra WordPress'e dokunmadan no404 panelinden değiştirebilirsiniz."
+
+#: class-no404-wizard.php:664
+msgid "Only if your catalogue is complete: browsers cache a 301 permanently, so a wrong match cannot be taken back."
+msgstr "Yalnızca kataloğunuz eksiksizse: tarayıcılar 301'i kalıcı olarak önbelleğe alır, yanlış bir eşleşme geri alınamaz."
+
+#: class-no404-wizard.php:668
+msgid "Continue"
+msgstr "Devam"
+
+#: class-no404-wizard.php:681
+msgid "You are all set"
+msgstr "Her şey hazır"
+
+#: class-no404-wizard.php:687
+msgid "no404 is now redirecting pages that are not found on %s."
+msgstr "no404 artık %s üzerinde bulunamayan sayfaları yönlendiriyor."
+
+#: class-no404-wizard.php:702
+msgid "Try it with an old address"
+msgstr "Eski bir adresle deneyin"
+
+#: class-no404-wizard.php:703
+msgid "Enter an address that no longer exists on your site. The test counts as one lookup and shows up in your no404 dashboard."
+msgstr "Sitenizde artık bulunmayan bir adres girin. Test bir sorgu sayılır ve no404 panelinizde görünür."
+
+#: class-no404-wizard.php:715
+msgid "Go to settings"
+msgstr "Ayarlara git"
+
+#: class-no404-wizard.php:733
+msgid "Monitoring for this site is paused in the no404 dashboard. Resume it there to start redirecting."
+msgstr "Bu sitenin izlenmesi no404 panelinde duraklatılmış. Yönlendirmeye başlamak için oradan devam ettirin."
+
+#: class-no404-wizard.php:735
+msgid "Your no404 subscription is not active, so nothing is redirected yet. Check your plan in the no404 dashboard."
+msgstr "no404 aboneliğiniz aktif değil, bu yüzden henüz hiçbir şey yönlendirilmiyor. Planınızı no404 panelinden kontrol edin."
+
+#: class-no404-wizard.php:737
+msgid "Your monthly lookup quota is used up. Redirects start again when it resets, or you can upgrade your plan in the no404 dashboard."
+msgstr "Aylık sorgu kotanız doldu. Kota yenilendiğinde yönlendirmeler yeniden başlar; isterseniz planınızı no404 panelinden yükseltebilirsiniz."
+
+#: class-no404-wizard.php:739
+msgid "Your no404 account is suspended. Contact no404 support."
+msgstr "no404 hesabınız askıya alınmış. no404 destek ekibiyle iletişime geçin."
 

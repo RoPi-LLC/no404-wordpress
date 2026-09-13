@@ -23,6 +23,9 @@ function no404_uninstall_site() {
 
 	delete_option( 'no404_settings' );
 	delete_option( 'no404_cache_generation' );
+	// Setup wizard progress (1.1.0). Its transients — the one-shot activation
+	// redirect and the per-user step notice — start with `no404_` and go below.
+	delete_option( 'no404_wizard' );
 
 	// Transient rows (with an external object cache these are not in the DB anyway).
 	$like = $wpdb->esc_like( '_transient_no404_' ) . '%';

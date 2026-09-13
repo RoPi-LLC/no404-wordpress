@@ -3,7 +3,7 @@
  * Plugin Name:       no404 – Auto 404 Redirect
  * Plugin URI:        https://no404.tr
  * Description:       Automatically redirects visitors who hit a 404 to the closest matching live URL on your site, using a real server-side 301.
- * Version:           1.0.3
+ * Version:           1.1.0
  * Requires at least: 6.0
  * Tested up to:      7.1
  * Requires PHP:      7.4
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'NO404_VERSION', '1.0.3' );
+define( 'NO404_VERSION', '1.1.0' );
 define( 'NO404_PLUGIN_FILE', __FILE__ );
 define( 'NO404_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 
@@ -31,6 +31,8 @@ require_once NO404_PLUGIN_DIR . 'includes/class-no404-wp-http.php';
 require_once NO404_PLUGIN_DIR . 'includes/class-no404-wp-cache.php';
 require_once NO404_PLUGIN_DIR . 'includes/class-no404-options.php';
 require_once NO404_PLUGIN_DIR . 'includes/class-no404-redirector.php';
+// Loaded outside is_admin(): the activation hook below needs the class.
+require_once NO404_PLUGIN_DIR . 'includes/class-no404-wizard.php';
 
 /**
  * The plugin's singleton instance.
@@ -71,6 +73,9 @@ final class No404_Plugin {
 			require_once NO404_PLUGIN_DIR . 'includes/class-no404-admin.php';
 			$admin = new No404_Admin();
 			$admin->register();
+
+			$wizard = new No404_Wizard();
+			$wizard->register();
 		}
 
 		// The front-end hook is deferred to `init`: while plugins are loading,
@@ -145,6 +150,28 @@ final class No404_Plugin {
 			return $this->client;
 		}
 
+		$this->client         = $this->build_client();
+		$this->client_blog_id = $blog_id;
+
+		return $this->client;
+	}
+
+	/** Forgets the cached client — call it after the settings change in this request. */
+	public function reset_client() {
+		$this->client         = null;
+		$this->client_blog_id = null;
+	}
+
+	/**
+	 * Builds a client from the stored settings.
+	 *
+	 * `$overrides` replaces configuration values WITHOUT saving them: the setup
+	 * wizard checks a pasted key this way before it is written.
+	 *
+	 * @param array $overrides Config key => value.
+	 * @return No404_Client
+	 */
+	public function build_client( array $overrides = array() ) {
 		$settings = No404_Options::all();
 
 		$config = array(
@@ -169,10 +196,7 @@ final class No404_Plugin {
 		 */
 		$config = apply_filters( 'no404_client_config', $config );
 
-		$this->client         = new No404_Client( $config, new No404_WP_Http(), new No404_WP_Cache() );
-		$this->client_blog_id = $blog_id;
-
-		return $this->client;
+		return new No404_Client( array_merge( $config, $overrides ), new No404_WP_Http(), new No404_WP_Cache() );
 	}
 
 	/**
@@ -246,5 +270,7 @@ final class No404_Plugin {
 function no404() {
 	return No404_Plugin::instance();
 }
+
+register_activation_hook( __FILE__, array( 'No404_Wizard', 'on_activate' ) );
 
 no404()->boot();

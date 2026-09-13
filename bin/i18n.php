@@ -95,7 +95,7 @@ function no404_extract( $root ) {
 	return $strings;
 }
 
-$strings = no404_extract( $root );$strings = no404_extract( $root );
+$strings = no404_extract( $root );
 
 // ---------------------------------------------------------------- consistency checks
 

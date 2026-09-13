@@ -8,8 +8,8 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-11 08:55+0000\n"
-"PO-Revision-Date: 2026-09-11 08:55+0000\n"
+"POT-Creation-Date: 2026-09-13 10:05+0000\n"
+"PO-Revision-Date: 2026-09-13 10:05+0000\n"
 "Language: hi_IN\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Domain: no404-auto-404-redirect\n"
@@ -18,7 +18,7 @@ msgstr ""
 msgid "Settings"
 msgstr "सेटिंग्स"
 
-#: class-no404-admin.php:50 class-no404-admin.php:274
+#: class-no404-admin.php:50 class-no404-admin.php:284
 msgid "no404 – Auto 404 Redirect"
 msgstr "no404 – स्वचालित 404 रीडायरेक्ट"
 
@@ -38,7 +38,7 @@ msgstr "व्यवहार"
 msgid "no404 address"
 msgstr "no404 पता"
 
-#: class-no404-admin.php:86
+#: class-no404-admin.php:86 class-no404-wizard.php:623
 msgid "API key"
 msgstr "API कुंजी"
 
@@ -74,11 +74,11 @@ msgstr "कैश उन बॉट्स को आपका मासिक इ
 msgid "You should not need to touch this — the default, %s, is the right address. Change it only if you host no404 on your own server. Leave the field empty to restore the default."
 msgstr "इसे बदलने की ज़रूरत आमतौर पर नहीं पड़ती — डिफ़ॉल्ट पता %s ही सही है। इसे तभी बदलें जब आप no404 को अपने सर्वर पर चलाते हों। डिफ़ॉल्ट पर लौटने के लिए यह जगह खाली छोड़ दें।"
 
-#: class-no404-admin.php:158
+#: class-no404-admin.php:158 class-no404-wizard.php:624
 msgid "Paste your key"
 msgstr "अपनी कुंजी यहाँ चिपकाएँ"
 
-#: class-no404-admin.php:164
+#: class-no404-admin.php:164 class-no404-wizard.php:632
 msgid "Saved key: %s — leave this field empty to keep it."
 msgstr "सहेजी गई कुंजी: %s — इसे बनाए रखने के लिए यह जगह खाली छोड़ दें।"
 
@@ -86,7 +86,7 @@ msgstr "सहेजी गई कुंजी: %s — इसे बनाए �
 msgid "Apply no404 redirects on pages that are not found"
 msgstr "न मिलने वाले पृष्ठों पर no404 रीडायरेक्ट लागू करें"
 
-#: class-no404-admin.php:181
+#: class-no404-admin.php:181 class-no404-wizard.php:663
 msgid "Send every match as a 301 (permanent)"
 msgstr "हर मिलान को 301 (स्थायी) के रूप में भेजें"
 
@@ -114,111 +114,255 @@ msgstr "यदि no404 इस समय में जवाब नहीं द
 msgid "One path prefix per line. URLs starting with these prefixes are never sent to no404. Static files (.css, .js, .png …) and paths such as /wp-admin and /wp-json are excluded automatically."
 msgstr "हर पंक्ति में एक पथ उपसर्ग। इन उपसर्गों से शुरू होने वाले URL कभी no404 को नहीं भेजे जाते। स्थिर फ़ाइलें (.css, .js, .png …) और /wp-admin तथा /wp-json जैसे पथ अपने आप छोड़ दिए जाते हैं।"
 
-#: class-no404-admin.php:258
+#: class-no404-admin.php:268
 msgid "Testing…"
 msgstr "जाँच हो रही है…"
 
-#: class-no404-admin.php:259
+#: class-no404-admin.php:269
 msgid "The test could not be completed. Reload the page and try again."
 msgstr "जाँच पूरी नहीं हो सकी। पृष्ठ फिर से लोड करें और दोबारा कोशिश करें।"
 
-#: class-no404-admin.php:278
+#: class-no404-admin.php:285 class-no404-wizard.php:415
+msgid "Run the setup wizard"
+msgstr "सेटअप विज़ार्ड चलाएँ"
+
+#: class-no404-admin.php:289
 msgid "The plugin is not running yet: no API key has been entered."
 msgstr "प्लगइन अभी चल नहीं रहा: कोई API कुंजी दर्ज नहीं की गई है।"
 
-#: class-no404-admin.php:282
+#: class-no404-admin.php:293
 msgid "Redirecting is switched off. 404 pages are shown as they are."
 msgstr "रीडायरेक्ट बंद है। 404 पृष्ठ जैसे हैं वैसे ही दिखाए जा रहे हैं।"
 
-#: class-no404-admin.php:286
+#: class-no404-admin.php:297 class-no404-wizard.php:697
 msgid "Active. Pages that are not found are redirected server-side."
 msgstr "सक्रिय। न मिलने वाले पृष्ठ सर्वर पर ही रीडायरेक्ट किए जाते हैं।"
 
-#: class-no404-admin.php:300
+#: class-no404-admin.php:311
 msgid "Connection test"
 msgstr "कनेक्शन जाँच"
 
-#: class-no404-admin.php:302
+#: class-no404-admin.php:313
 msgid "Sends a real request to no404 using your saved settings. Save your changes first."
 msgstr "आपकी सहेजी गई सेटिंग्स से no404 को एक असली अनुरोध भेजता है। पहले अपने बदलाव सहेजें।"
 
-#: class-no404-admin.php:308
+#: class-no404-admin.php:319 class-no404-wizard.php:705
 msgid "Path to test"
 msgstr "जाँचने के लिए पथ"
 
-#: class-no404-admin.php:313
+#: class-no404-admin.php:324 class-no404-wizard.php:709
 msgid "Test the connection"
 msgstr "कनेक्शन जाँचें"
 
-#: class-no404-admin.php:330
+#: class-no404-admin.php:341 class-no404-wizard.php:458
 msgid "You do not have permission to do this."
 msgstr "आपके पास ऐसा करने की अनुमति नहीं है।"
 
-#: class-no404-admin.php:340
+#: class-no404-admin.php:351
 msgid "The client could not be initialised."
 msgstr "क्लाइंट शुरू नहीं किया जा सका।"
 
-#: class-no404-admin.php:397
+#: class-no404-admin.php:409
 msgid "Connection succeeded. Suggested target for this path: %1$s (source: %2$s, score: %3$s)."
 msgstr "कनेक्शन सफल रहा। इस पथ के लिए सुझाया गया लक्ष्य: %1$s (स्रोत: %2$s, स्कोर: %3$s)।"
 
-#: class-no404-admin.php:404
+#: class-no404-admin.php:416
 msgid "Connection succeeded. Your API key is valid; no match was found for this test path, which is what we expect."
 msgstr "कनेक्शन सफल रहा। आपकी API कुंजी वैध है; इस परीक्षण पथ के लिए कोई मिलान नहीं मिला — यही अपेक्षित है।"
 
-#: class-no404-admin.php:407
+#: class-no404-admin.php:419
 msgid "No API key has been entered. Save your key and try again."
 msgstr "कोई API कुंजी दर्ज नहीं की गई है। अपनी कुंजी सहेजें और दोबारा कोशिश करें।"
 
-#: class-no404-admin.php:410
+#: class-no404-admin.php:422
 msgid "The no404 address is empty."
 msgstr "no404 पता खाली है।"
 
-#: class-no404-admin.php:413
+#: class-no404-admin.php:425
 msgid "Invalid API key (404). Copy the key from the site settings page in your no404 dashboard; if you rotated the key recently, enter the new one here as well."
 msgstr "अमान्य API कुंजी (404)। कुंजी को no404 डैशबोर्ड के साइट सेटिंग्स पृष्ठ से कॉपी करें; यदि आपने हाल ही में कुंजी बदली है तो नई कुंजी यहाँ भी दर्ज करें।"
 
-#: class-no404-admin.php:419
+#: class-no404-admin.php:431
 msgid "Access denied (403): %s. Your subscription may be inactive, monitoring for this site may be paused, or your account may be suspended."
 msgstr "पहुँच अस्वीकृत (403): %s। हो सकता है आपकी सदस्यता निष्क्रिय हो, इस साइट की निगरानी रोकी गई हो, या आपका खाता निलंबित हो।"
 
-#: class-no404-admin.php:422
+#: class-no404-admin.php:434
 msgid "Access denied (403). Your subscription may be inactive, monitoring for this site may be paused, or your account may be suspended."
 msgstr "पहुँच अस्वीकृत (403)। हो सकता है आपकी सदस्यता निष्क्रिय हो, इस साइट की निगरानी रोकी गई हो, या आपका खाता निलंबित हो।"
 
-#: class-no404-admin.php:425
+#: class-no404-admin.php:437
 msgid "Rate limit exceeded, or your monthly event quota is used up (429). Check your quota in the no404 dashboard; if you sent many requests in a short time, try again in a minute."
 msgstr "अनुरोध सीमा पार हो गई, या आपका मासिक इवेंट कोटा खत्म हो गया (429)। no404 डैशबोर्ड में अपना कोटा देखें; यदि आपने कम समय में बहुत सारे अनुरोध भेजे हैं तो एक मिनट बाद दोबारा कोशिश करें।"
 
-#: class-no404-admin.php:428
+#: class-no404-admin.php:440
 msgid "The test path is invalid (422). Enter a path that starts with \"/\"."
 msgstr "परीक्षण पथ अमान्य है (422)। ऐसा पथ दर्ज करें जो \"/\" से शुरू होता हो।"
 
-#: class-no404-admin.php:434
+#: class-no404-admin.php:446
 msgid "Could not reach the no404 server: %s. Make sure your server is allowed to make outbound HTTPS requests."
 msgstr "no404 सर्वर तक नहीं पहुँचा जा सका: %s। सुनिश्चित करें कि आपके सर्वर को बाहर की ओर HTTPS अनुरोध भेजने की अनुमति है।"
 
-#: class-no404-admin.php:437
+#: class-no404-admin.php:449
 msgid "Could not reach the no404 server. Make sure your server is allowed to make outbound HTTPS requests."
 msgstr "no404 सर्वर तक नहीं पहुँचा जा सका। सुनिश्चित करें कि आपके सर्वर को बाहर की ओर HTTPS अनुरोध भेजने की अनुमति है।"
 
-#: class-no404-admin.php:445
+#: class-no404-admin.php:457
 msgid "The no404 address redirects somewhere else. Enter %s in the \"no404 address\" field, save, and test again."
 msgstr "no404 पता कहीं और रीडायरेक्ट करता है। \"no404 पता\" फ़ील्ड में %s डालें, सहेजें और दोबारा जाँचें।"
 
-#: class-no404-admin.php:448
+#: class-no404-admin.php:460
 msgid "The no404 address redirects somewhere else, so no answer could be read. Check the address in the settings — it is usually the www form of the domain."
 msgstr "no404 पता कहीं और रीडायरेक्ट करता है, इसलिए कोई उत्तर नहीं पढ़ा जा सका। सेटिंग्स में पता जाँचें — आमतौर पर यह डोमेन का www वाला रूप होता है।"
 
-#: class-no404-admin.php:451
+#: class-no404-admin.php:463
 msgid "no404 hit a temporary error (5xx). Your site is unaffected; try again shortly."
 msgstr "no404 में एक अस्थायी त्रुटि आई (5xx)। इससे आपकी साइट पर कोई असर नहीं पड़ता; थोड़ी देर में दोबारा कोशिश करें।"
 
-#: class-no404-admin.php:456
+#: class-no404-admin.php:468
 msgid "Unexpected response (HTTP %d)."
 msgstr "अप्रत्याशित प्रतिक्रिया (HTTP %d)।"
 
-#: class-no404-options.php:177
+#: class-no404-options.php:208
 msgid "The no404 address must be a valid http(s) URL. The previous value has been kept. Leave the field empty to restore the default."
 msgstr "no404 पता एक वैध http(s) URL होना चाहिए। पिछला मान बनाए रखा गया है। डिफ़ॉल्ट पर लौटने के लिए यह जगह खाली छोड़ दें।"
+
+#: class-no404-wizard.php:229
+msgid "Paste your API key first."
+msgstr "पहले अपनी API कुंजी चिपकाएँ।"
+
+#: class-no404-wizard.php:256
+msgid "This key belongs to %1$s, but this WordPress site is %2$s. Copy this site's key from its Integration tab in the no404 dashboard. If you are sure, you can still save the key on the settings page."
+msgstr "यह कुंजी %1$s की है, लेकिन यह WordPress साइट %2$s है। no404 डैशबोर्ड में इस साइट के इंटीग्रेशन टैब से इसकी कुंजी कॉपी करें। अगर आप निश्चित हैं, तो कुंजी को फिर भी सेटिंग्स पेज पर सहेज सकते हैं।"
+
+#: class-no404-wizard.php:269
+msgid "Connected to %s."
+msgstr "%s से कनेक्ट हो गया।"
+
+#: class-no404-wizard.php:341 class-no404-wizard.php:342
+msgid "no404 setup"
+msgstr "no404 सेटअप"
+
+#: class-no404-wizard.php:413
+msgid "no404 is installed but not connected yet."
+msgstr "no404 इंस्टॉल है, लेकिन अभी कनेक्ट नहीं हुआ है।"
+
+#: class-no404-wizard.php:417
+msgid "Dismiss"
+msgstr "खारिज करें"
+
+#: class-no404-wizard.php:529
+msgid "Welcome"
+msgstr "स्वागत है"
+
+#: class-no404-wizard.php:530 class-no404-wizard.php:640
+msgid "Connect"
+msgstr "कनेक्ट करें"
+
+#: class-no404-wizard.php:531
+msgid "Redirects"
+msgstr "रीडायरेक्ट"
+
+#: class-no404-wizard.php:532
+msgid "Done"
+msgstr "पूरा हुआ"
+
+#: class-no404-wizard.php:573
+msgid "Skip setup"
+msgstr "सेटअप छोड़ें"
+
+#: class-no404-wizard.php:600
+msgid "Welcome to no404"
+msgstr "no404 में आपका स्वागत है"
+
+#: class-no404-wizard.php:601
+msgid "When a visitor lands on a page that no longer exists, no404 finds the closest live page on your site and sends them there with a real server-side 301. There are no redirect rules to write."
+msgstr "जब कोई विज़िटर ऐसे पेज पर पहुँचता है जो अब मौजूद नहीं है, तो no404 आपकी साइट पर सबसे मिलता-जुलता चालू पेज ढूँढता है और असली सर्वर-साइड 301 से उसे वहाँ भेज देता है। कोई रीडायरेक्ट नियम लिखने की ज़रूरत नहीं।"
+
+#: class-no404-wizard.php:602
+msgid "no404 is a hosted service, so the plugin needs a free no404 account and an API key. Setup takes about two minutes."
+msgstr "no404 एक होस्टेड सेवा है, इसलिए प्लगइन को एक मुफ़्त no404 खाते और API कुंजी की ज़रूरत है। सेटअप में लगभग दो मिनट लगते हैं।"
+
+#: class-no404-wizard.php:604
+msgid "Create a free account"
+msgstr "मुफ़्त खाता बनाएँ"
+
+#: class-no404-wizard.php:605
+msgid "I already have an account"
+msgstr "मेरे पास पहले से खाता है"
+
+#: class-no404-wizard.php:607
+msgid "The sign-up page opens in a new tab with this site's address filled in. Add the site there, then come back to this tab."
+msgstr "साइन-अप पेज एक नए टैब में खुलता है, जिसमें इस साइट का पता पहले से भरा होता है। वहाँ साइट जोड़ें, फिर इस टैब पर लौट आएँ।"
+
+#: class-no404-wizard.php:615
+msgid "Connect your site"
+msgstr "अपनी साइट कनेक्ट करें"
+
+#: class-no404-wizard.php:616
+msgid "In your no404 dashboard, open this site and go to the Integration tab. Copy the API key from the WordPress card and paste it below."
+msgstr "अपने no404 डैशबोर्ड में यह साइट खोलें और इंटीग्रेशन टैब पर जाएँ। WordPress कार्ड से API कुंजी कॉपी करें और नीचे चिपकाएँ।"
+
+#: class-no404-wizard.php:617 class-no404-wizard.php:714
+msgid "Open the no404 dashboard"
+msgstr "no404 डैशबोर्ड खोलें"
+
+#: class-no404-wizard.php:641 class-no404-wizard.php:669
+msgid "Back"
+msgstr "वापस"
+
+#: class-no404-wizard.php:651
+msgid "How should redirects be sent?"
+msgstr "रीडायरेक्ट कैसे भेजे जाएँ?"
+
+#: class-no404-wizard.php:658
+msgid "Follow my no404 dashboard (recommended)"
+msgstr "मेरे no404 डैशबोर्ड का पालन करें (अनुशंसित)"
+
+#: class-no404-wizard.php:659
+msgid "Confident matches and your own redirects get a permanent 301, uncertain guesses a temporary 302. You can change the threshold later in your no404 dashboard without touching WordPress."
+msgstr "भरोसेमंद मिलान और आपके अपने रीडायरेक्ट को स्थायी 301 मिलता है, अनिश्चित अनुमानों को अस्थायी 302। थ्रेशोल्ड आप बाद में WordPress को छुए बिना no404 डैशबोर्ड में बदल सकते हैं।"
+
+#: class-no404-wizard.php:664
+msgid "Only if your catalogue is complete: browsers cache a 301 permanently, so a wrong match cannot be taken back."
+msgstr "केवल तभी जब आपका कैटलॉग पूरा हो: ब्राउज़र 301 को स्थायी रूप से कैश करते हैं, इसलिए गलत मिलान को वापस नहीं लिया जा सकता।"
+
+#: class-no404-wizard.php:668
+msgid "Continue"
+msgstr "जारी रखें"
+
+#: class-no404-wizard.php:681
+msgid "You are all set"
+msgstr "सब तैयार है"
+
+#: class-no404-wizard.php:687
+msgid "no404 is now redirecting pages that are not found on %s."
+msgstr "no404 अब %s पर न मिलने वाले पेजों को रीडायरेक्ट कर रहा है।"
+
+#: class-no404-wizard.php:702
+msgid "Try it with an old address"
+msgstr "किसी पुराने पते से आज़माएँ"
+
+#: class-no404-wizard.php:703
+msgid "Enter an address that no longer exists on your site. The test counts as one lookup and shows up in your no404 dashboard."
+msgstr "ऐसा पता डालें जो अब आपकी साइट पर मौजूद नहीं है। यह परीक्षण एक लुकअप गिना जाता है और आपके no404 डैशबोर्ड में दिखता है।"
+
+#: class-no404-wizard.php:715
+msgid "Go to settings"
+msgstr "सेटिंग्स पर जाएँ"
+
+#: class-no404-wizard.php:733
+msgid "Monitoring for this site is paused in the no404 dashboard. Resume it there to start redirecting."
+msgstr "इस साइट की निगरानी no404 डैशबोर्ड में रोकी गई है। रीडायरेक्ट शुरू करने के लिए उसे वहाँ फिर से चालू करें।"
+
+#: class-no404-wizard.php:735
+msgid "Your no404 subscription is not active, so nothing is redirected yet. Check your plan in the no404 dashboard."
+msgstr "आपकी no404 सदस्यता सक्रिय नहीं है, इसलिए अभी कुछ भी रीडायरेक्ट नहीं होता। no404 डैशबोर्ड में अपना प्लान जाँचें।"
+
+#: class-no404-wizard.php:737
+msgid "Your monthly lookup quota is used up. Redirects start again when it resets, or you can upgrade your plan in the no404 dashboard."
+msgstr "आपका मासिक लुकअप कोटा खत्म हो गया है। कोटा रीसेट होने पर रीडायरेक्ट फिर शुरू होंगे, या आप no404 डैशबोर्ड में अपना प्लान अपग्रेड कर सकते हैं।"
+
+#: class-no404-wizard.php:739
+msgid "Your no404 account is suspended. Contact no404 support."
+msgstr "आपका no404 खाता निलंबित है। no404 सहायता से संपर्क करें।"
 

@@ -8,8 +8,8 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-11 08:55+0000\n"
-"PO-Revision-Date: 2026-09-11 08:55+0000\n"
+"POT-Creation-Date: 2026-09-13 10:05+0000\n"
+"PO-Revision-Date: 2026-09-13 10:05+0000\n"
 "Language: es_ES\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Domain: no404-auto-404-redirect\n"
@@ -18,7 +18,7 @@ msgstr ""
 msgid "Settings"
 msgstr "Ajustes"
 
-#: class-no404-admin.php:50 class-no404-admin.php:274
+#: class-no404-admin.php:50 class-no404-admin.php:284
 msgid "no404 – Auto 404 Redirect"
 msgstr "no404 – Redirección automática de 404"
 
@@ -38,7 +38,7 @@ msgstr "Comportamiento"
 msgid "no404 address"
 msgstr "Dirección de no404"
 
-#: class-no404-admin.php:86
+#: class-no404-admin.php:86 class-no404-wizard.php:623
 msgid "API key"
 msgstr "Clave de API"
 
@@ -74,11 +74,11 @@ msgstr "La caché evita que los bots que piden una y otra vez la misma URL muert
 msgid "You should not need to touch this — the default, %s, is the right address. Change it only if you host no404 on your own server. Leave the field empty to restore the default."
 msgstr "No deberías necesitar tocar esto: el valor por defecto, %s, es la dirección correcta. Cámbialo solo si alojas no404 en tu propio servidor. Deja el campo vacío para restaurar el valor por defecto."
 
-#: class-no404-admin.php:158
+#: class-no404-admin.php:158 class-no404-wizard.php:624
 msgid "Paste your key"
 msgstr "Pega tu clave"
 
-#: class-no404-admin.php:164
+#: class-no404-admin.php:164 class-no404-wizard.php:632
 msgid "Saved key: %s — leave this field empty to keep it."
 msgstr "Clave guardada: %s. Deja este campo vacío para conservarla."
 
@@ -86,7 +86,7 @@ msgstr "Clave guardada: %s. Deja este campo vacío para conservarla."
 msgid "Apply no404 redirects on pages that are not found"
 msgstr "Aplicar las redirecciones de no404 en las páginas no encontradas"
 
-#: class-no404-admin.php:181
+#: class-no404-admin.php:181 class-no404-wizard.php:663
 msgid "Send every match as a 301 (permanent)"
 msgstr "Enviar todas las coincidencias como 301 (permanente)"
 
@@ -114,111 +114,255 @@ msgstr "Si no404 no responde en ese tiempo, la petición se descarta y tu sitio 
 msgid "One path prefix per line. URLs starting with these prefixes are never sent to no404. Static files (.css, .js, .png …) and paths such as /wp-admin and /wp-json are excluded automatically."
 msgstr "Un prefijo de ruta por línea. Las URL que empiecen por estos prefijos nunca se envían a no404. Los archivos estáticos (.css, .js, .png …) y rutas como /wp-admin y /wp-json se excluyen automáticamente."
 
-#: class-no404-admin.php:258
+#: class-no404-admin.php:268
 msgid "Testing…"
 msgstr "Probando…"
 
-#: class-no404-admin.php:259
+#: class-no404-admin.php:269
 msgid "The test could not be completed. Reload the page and try again."
 msgstr "No se ha podido completar la prueba. Recarga la página e inténtalo de nuevo."
 
-#: class-no404-admin.php:278
+#: class-no404-admin.php:285 class-no404-wizard.php:415
+msgid "Run the setup wizard"
+msgstr "Ejecutar el asistente de configuración"
+
+#: class-no404-admin.php:289
 msgid "The plugin is not running yet: no API key has been entered."
 msgstr "El plugin todavía no está funcionando: no se ha introducido ninguna clave de API."
 
-#: class-no404-admin.php:282
+#: class-no404-admin.php:293
 msgid "Redirecting is switched off. 404 pages are shown as they are."
 msgstr "La redirección está desactivada. Las páginas 404 se muestran tal cual."
 
-#: class-no404-admin.php:286
+#: class-no404-admin.php:297 class-no404-wizard.php:697
 msgid "Active. Pages that are not found are redirected server-side."
 msgstr "Activo. Las páginas no encontradas se redirigen en el servidor."
 
-#: class-no404-admin.php:300
+#: class-no404-admin.php:311
 msgid "Connection test"
 msgstr "Prueba de conexión"
 
-#: class-no404-admin.php:302
+#: class-no404-admin.php:313
 msgid "Sends a real request to no404 using your saved settings. Save your changes first."
 msgstr "Envía una petición real a no404 con tus ajustes guardados. Guarda antes tus cambios."
 
-#: class-no404-admin.php:308
+#: class-no404-admin.php:319 class-no404-wizard.php:705
 msgid "Path to test"
 msgstr "Ruta que probar"
 
-#: class-no404-admin.php:313
+#: class-no404-admin.php:324 class-no404-wizard.php:709
 msgid "Test the connection"
 msgstr "Probar la conexión"
 
-#: class-no404-admin.php:330
+#: class-no404-admin.php:341 class-no404-wizard.php:458
 msgid "You do not have permission to do this."
 msgstr "No tienes permisos para hacer esto."
 
-#: class-no404-admin.php:340
+#: class-no404-admin.php:351
 msgid "The client could not be initialised."
 msgstr "No se ha podido inicializar el cliente."
 
-#: class-no404-admin.php:397
+#: class-no404-admin.php:409
 msgid "Connection succeeded. Suggested target for this path: %1$s (source: %2$s, score: %3$s)."
 msgstr "Conexión correcta. Destino sugerido para esta ruta: %1$s (origen: %2$s, puntuación: %3$s)."
 
-#: class-no404-admin.php:404
+#: class-no404-admin.php:416
 msgid "Connection succeeded. Your API key is valid; no match was found for this test path, which is what we expect."
 msgstr "Conexión correcta. Tu clave de API es válida; no se ha encontrado ninguna coincidencia para esta ruta de prueba, que es justo lo esperado."
 
-#: class-no404-admin.php:407
+#: class-no404-admin.php:419
 msgid "No API key has been entered. Save your key and try again."
 msgstr "No se ha introducido ninguna clave de API. Guarda tu clave e inténtalo de nuevo."
 
-#: class-no404-admin.php:410
+#: class-no404-admin.php:422
 msgid "The no404 address is empty."
 msgstr "La dirección de no404 está vacía."
 
-#: class-no404-admin.php:413
+#: class-no404-admin.php:425
 msgid "Invalid API key (404). Copy the key from the site settings page in your no404 dashboard; if you rotated the key recently, enter the new one here as well."
 msgstr "Clave de API no válida (404). Copia la clave desde la página de ajustes del sitio de tu escritorio de no404; si la has renovado hace poco, introduce aquí también la nueva."
 
-#: class-no404-admin.php:419
+#: class-no404-admin.php:431
 msgid "Access denied (403): %s. Your subscription may be inactive, monitoring for this site may be paused, or your account may be suspended."
 msgstr "Acceso denegado (403): %s. Puede que tu suscripción esté inactiva, que la monitorización de este sitio esté en pausa o que tu cuenta esté suspendida."
 
-#: class-no404-admin.php:422
+#: class-no404-admin.php:434
 msgid "Access denied (403). Your subscription may be inactive, monitoring for this site may be paused, or your account may be suspended."
 msgstr "Acceso denegado (403). Puede que tu suscripción esté inactiva, que la monitorización de este sitio esté en pausa o que tu cuenta esté suspendida."
 
-#: class-no404-admin.php:425
+#: class-no404-admin.php:437
 msgid "Rate limit exceeded, or your monthly event quota is used up (429). Check your quota in the no404 dashboard; if you sent many requests in a short time, try again in a minute."
 msgstr "Se ha superado el límite de peticiones o se ha agotado tu cuota mensual de eventos (429). Revisa tu cuota en el escritorio de no404; si has enviado muchas peticiones en poco tiempo, inténtalo de nuevo dentro de un minuto."
 
-#: class-no404-admin.php:428
+#: class-no404-admin.php:440
 msgid "The test path is invalid (422). Enter a path that starts with \"/\"."
 msgstr "La ruta de prueba no es válida (422). Introduce una ruta que empiece por «/»."
 
-#: class-no404-admin.php:434
+#: class-no404-admin.php:446
 msgid "Could not reach the no404 server: %s. Make sure your server is allowed to make outbound HTTPS requests."
 msgstr "No se ha podido contactar con el servidor de no404: %s. Asegúrate de que tu servidor tiene permiso para hacer peticiones HTTPS salientes."
 
-#: class-no404-admin.php:437
+#: class-no404-admin.php:449
 msgid "Could not reach the no404 server. Make sure your server is allowed to make outbound HTTPS requests."
 msgstr "No se ha podido contactar con el servidor de no404. Asegúrate de que tu servidor tiene permiso para hacer peticiones HTTPS salientes."
 
-#: class-no404-admin.php:445
+#: class-no404-admin.php:457
 msgid "The no404 address redirects somewhere else. Enter %s in the \"no404 address\" field, save, and test again."
 msgstr "La dirección de no404 redirige a otro sitio. Escribe %s en el campo «Dirección de no404», guarda y vuelve a probar."
 
-#: class-no404-admin.php:448
+#: class-no404-admin.php:460
 msgid "The no404 address redirects somewhere else, so no answer could be read. Check the address in the settings — it is usually the www form of the domain."
 msgstr "La dirección de no404 redirige a otro sitio, así que no se pudo leer ninguna respuesta. Revisa la dirección en los ajustes: normalmente es la forma con www del dominio."
 
-#: class-no404-admin.php:451
+#: class-no404-admin.php:463
 msgid "no404 hit a temporary error (5xx). Your site is unaffected; try again shortly."
 msgstr "no404 ha tenido un error temporal (5xx). Tu sitio no se ve afectado; vuelve a intentarlo en un momento."
 
-#: class-no404-admin.php:456
+#: class-no404-admin.php:468
 msgid "Unexpected response (HTTP %d)."
 msgstr "Respuesta inesperada (HTTP %d)."
 
-#: class-no404-options.php:177
+#: class-no404-options.php:208
 msgid "The no404 address must be a valid http(s) URL. The previous value has been kept. Leave the field empty to restore the default."
 msgstr "La dirección de no404 debe ser una URL http(s) válida. Se ha conservado el valor anterior. Deja el campo vacío para restaurar el valor por defecto."
+
+#: class-no404-wizard.php:229
+msgid "Paste your API key first."
+msgstr "Primero pega tu clave API."
+
+#: class-no404-wizard.php:256
+msgid "This key belongs to %1$s, but this WordPress site is %2$s. Copy this site's key from its Integration tab in the no404 dashboard. If you are sure, you can still save the key on the settings page."
+msgstr "Esta clave pertenece a %1$s, pero este sitio de WordPress es %2$s. Copia la clave de este sitio desde su pestaña Integración en el panel de no404. Si estás seguro, puedes guardar la clave igualmente en la página de ajustes."
+
+#: class-no404-wizard.php:269
+msgid "Connected to %s."
+msgstr "Conectado a %s."
+
+#: class-no404-wizard.php:341 class-no404-wizard.php:342
+msgid "no404 setup"
+msgstr "Configuración de no404"
+
+#: class-no404-wizard.php:413
+msgid "no404 is installed but not connected yet."
+msgstr "no404 está instalado, pero todavía no está conectado."
+
+#: class-no404-wizard.php:417
+msgid "Dismiss"
+msgstr "Descartar"
+
+#: class-no404-wizard.php:529
+msgid "Welcome"
+msgstr "Bienvenida"
+
+#: class-no404-wizard.php:530 class-no404-wizard.php:640
+msgid "Connect"
+msgstr "Conectar"
+
+#: class-no404-wizard.php:531
+msgid "Redirects"
+msgstr "Redirecciones"
+
+#: class-no404-wizard.php:532
+msgid "Done"
+msgstr "Listo"
+
+#: class-no404-wizard.php:573
+msgid "Skip setup"
+msgstr "Omitir la configuración"
+
+#: class-no404-wizard.php:600
+msgid "Welcome to no404"
+msgstr "Te damos la bienvenida a no404"
+
+#: class-no404-wizard.php:601
+msgid "When a visitor lands on a page that no longer exists, no404 finds the closest live page on your site and sends them there with a real server-side 301. There are no redirect rules to write."
+msgstr "Cuando un visitante llega a una página que ya no existe, no404 encuentra la página activa más parecida de tu sitio y lo envía allí con una redirección 301 real del lado del servidor. No tienes que escribir reglas de redirección."
+
+#: class-no404-wizard.php:602
+msgid "no404 is a hosted service, so the plugin needs a free no404 account and an API key. Setup takes about two minutes."
+msgstr "no404 es un servicio alojado, así que el plugin necesita una cuenta gratuita de no404 y una clave API. La configuración lleva unos dos minutos."
+
+#: class-no404-wizard.php:604
+msgid "Create a free account"
+msgstr "Crear una cuenta gratuita"
+
+#: class-no404-wizard.php:605
+msgid "I already have an account"
+msgstr "Ya tengo una cuenta"
+
+#: class-no404-wizard.php:607
+msgid "The sign-up page opens in a new tab with this site's address filled in. Add the site there, then come back to this tab."
+msgstr "La página de registro se abre en una pestaña nueva con la dirección de este sitio ya rellenada. Añade el sitio allí y luego vuelve a esta pestaña."
+
+#: class-no404-wizard.php:615
+msgid "Connect your site"
+msgstr "Conecta tu sitio"
+
+#: class-no404-wizard.php:616
+msgid "In your no404 dashboard, open this site and go to the Integration tab. Copy the API key from the WordPress card and paste it below."
+msgstr "En tu panel de no404, abre este sitio y ve a la pestaña Integración. Copia la clave API de la tarjeta de WordPress y pégala abajo."
+
+#: class-no404-wizard.php:617 class-no404-wizard.php:714
+msgid "Open the no404 dashboard"
+msgstr "Abrir el panel de no404"
+
+#: class-no404-wizard.php:641 class-no404-wizard.php:669
+msgid "Back"
+msgstr "Atrás"
+
+#: class-no404-wizard.php:651
+msgid "How should redirects be sent?"
+msgstr "¿Cómo deben enviarse las redirecciones?"
+
+#: class-no404-wizard.php:658
+msgid "Follow my no404 dashboard (recommended)"
+msgstr "Seguir mi panel de no404 (recomendado)"
+
+#: class-no404-wizard.php:659
+msgid "Confident matches and your own redirects get a permanent 301, uncertain guesses a temporary 302. You can change the threshold later in your no404 dashboard without touching WordPress."
+msgstr "Las coincidencias seguras y tus propias redirecciones reciben un 301 permanente; las suposiciones dudosas, un 302 temporal. Puedes cambiar el umbral más adelante en tu panel de no404 sin tocar WordPress."
+
+#: class-no404-wizard.php:664
+msgid "Only if your catalogue is complete: browsers cache a 301 permanently, so a wrong match cannot be taken back."
+msgstr "Solo si tu catálogo está completo: los navegadores guardan un 301 de forma permanente, así que una coincidencia errónea no se puede deshacer."
+
+#: class-no404-wizard.php:668
+msgid "Continue"
+msgstr "Continuar"
+
+#: class-no404-wizard.php:681
+msgid "You are all set"
+msgstr "Todo listo"
+
+#: class-no404-wizard.php:687
+msgid "no404 is now redirecting pages that are not found on %s."
+msgstr "no404 ya está redirigiendo las páginas no encontradas en %s."
+
+#: class-no404-wizard.php:702
+msgid "Try it with an old address"
+msgstr "Pruébalo con una dirección antigua"
+
+#: class-no404-wizard.php:703
+msgid "Enter an address that no longer exists on your site. The test counts as one lookup and shows up in your no404 dashboard."
+msgstr "Escribe una dirección que ya no exista en tu sitio. La prueba cuenta como una consulta y aparece en tu panel de no404."
+
+#: class-no404-wizard.php:715
+msgid "Go to settings"
+msgstr "Ir a los ajustes"
+
+#: class-no404-wizard.php:733
+msgid "Monitoring for this site is paused in the no404 dashboard. Resume it there to start redirecting."
+msgstr "La supervisión de este sitio está en pausa en el panel de no404. Reanúdala allí para empezar a redirigir."
+
+#: class-no404-wizard.php:735
+msgid "Your no404 subscription is not active, so nothing is redirected yet. Check your plan in the no404 dashboard."
+msgstr "Tu suscripción de no404 no está activa, así que todavía no se redirige nada. Revisa tu plan en el panel de no404."
+
+#: class-no404-wizard.php:737
+msgid "Your monthly lookup quota is used up. Redirects start again when it resets, or you can upgrade your plan in the no404 dashboard."
+msgstr "Has agotado tu cuota mensual de consultas. Las redirecciones volverán cuando se renueve, o puedes mejorar tu plan en el panel de no404."
+
+#: class-no404-wizard.php:739
+msgid "Your no404 account is suspended. Contact no404 support."
+msgstr "Tu cuenta de no404 está suspendida. Ponte en contacto con el soporte de no404."
 
