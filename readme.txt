@@ -4,7 +4,7 @@ Tags: 404, redirect, 301, seo, broken links
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.1.0
+Stable tag: 1.1.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -164,6 +164,9 @@ It follows your WordPress language setting. English is the default, and translat
 
 == Changelog ==
 
+= 1.1.1 =
+* Changed: the wizard's button to your no404 dashboard now opens the new dashboard address directly. The old address still redirects there, so nothing breaks on 1.1.0.
+
 = 1.1.0 =
 * New: a setup wizard opens once after activation. Create an account, paste your API key, choose how redirects are sent and try an old address, in four short steps. It does not open on bulk or network activation, for sites that already have a key, or ever again once you finish or skip it. You can rerun it from Settings → no404.
 * New: the wizard checks that the API key belongs to this site. A key copied from another site in the same no404 account used to pass the connection test and then silently redirect nothing, because every target it returned was on the other domain.
@@ -194,6 +197,9 @@ It follows your WordPress language setting. English is the default, and translat
 * Multisite support.
 
 == Upgrade Notice ==
+
+= 1.1.1 =
+Small fix: the setup wizard links straight to the new no404 dashboard address.
 
 = 1.1.0 =
 Adds a one-time setup wizard and catches API keys that belong to a different site. Sites that are already connected see no change.
