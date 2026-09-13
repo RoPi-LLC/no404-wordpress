@@ -182,7 +182,7 @@ class No404_Wizard {
 
 	/** @return string The no404 dashboard. */
 	public static function dashboard_url() {
-		return self::service_base() . '/panel';
+		return self::service_base() . '/dashboard';
 	}
 
 	/** @return string This site's host, lower case. */
