@@ -49,6 +49,60 @@ class No404_Client {
 		'remarketing',
 	);
 
+	/** AI sources the no404 API accepts in `src=` (it drops anything else). */
+	const AI_SOURCES = array( 'chatgpt', 'claude', 'perplexity', 'gemini', 'copilot', 'meta', 'other' );
+
+	/**
+	 * `utm_source` value (lower case, EXACT match) → AI source. Same list as the
+	 * server (lib/ai-source.ts). An exact list on purpose: not every value that
+	 * contains "chat" is an AI assistant (utm_source=chatbot-campaign).
+	 */
+	const AI_UTM_SOURCES = array(
+		'chatgpt.com'           => 'chatgpt',
+		'chatgpt'               => 'chatgpt',
+		'openai'                => 'chatgpt',
+		'openai.com'            => 'chatgpt',
+		'claude.ai'             => 'claude',
+		'claude'                => 'claude',
+		'perplexity'            => 'perplexity',
+		'perplexity.ai'         => 'perplexity',
+		'gemini'                => 'gemini',
+		'gemini.google.com'     => 'gemini',
+		'copilot'               => 'copilot',
+		'copilot.com'           => 'copilot',
+		'copilot.microsoft.com' => 'copilot',
+		'meta.ai'               => 'meta',
+		'deepseek'              => 'other',
+		'grok'                  => 'other',
+		'grok.com'              => 'other',
+		'mistral'               => 'other',
+		'you.com'               => 'other',
+	);
+
+	/**
+	 * Referrer domain → AI source. The referrer host matches when it IS the domain
+	 * or a subdomain of it. Assistant products only: google.com (search) is not
+	 * here, gemini.google.com is. Same list as the server (lib/ai-source.ts).
+	 */
+	const AI_REFERRER_HOSTS = array(
+		'chatgpt.com'             => 'chatgpt',
+		'chat.openai.com'         => 'chatgpt',
+		'claude.ai'               => 'claude',
+		'perplexity.ai'           => 'perplexity',
+		'perplexity.com'          => 'perplexity',
+		'gemini.google.com'       => 'gemini',
+		'bard.google.com'         => 'gemini',
+		'copilot.microsoft.com'   => 'copilot',
+		'copilot.cloud.microsoft' => 'copilot',
+		'meta.ai'                 => 'meta',
+		'chat.deepseek.com'       => 'other',
+		'grok.com'                => 'other',
+		'chat.mistral.ai'         => 'other',
+		'you.com'                 => 'other',
+		'poe.com'                 => 'other',
+		'phind.com'               => 'other',
+	);
+
 	/** CATALOG matches above this score count as permanent (301). */
 	const HIGH_CONFIDENCE_SCORE = 0.5;
 
@@ -197,6 +251,10 @@ class No404_Client {
 	 * paid click; answering them from the cache would leave them uncounted in the
 	 * dashboard. If no404 cannot be reached, the cached result is still used.
 	 *
+	 * AI ASSISTANTS: a visitor who clicked through from ChatGPT, Claude… (`$ai`,
+	 * see detect_ai_source) is treated exactly like an ad click — the cache is not
+	 * read, so the visit is counted, with the same fallback to the cache.
+	 *
 	 * VISITOR: the request leaves from this server, so without `$visitor` no404
 	 * would record every 404 under the server's own IP and the plugin's user agent.
 	 * See visitor_headers(): the IP is truncated to its network before it is sent.
@@ -205,10 +263,11 @@ class No404_Client {
 	 * @param string $referrer Where the visitor came from (optional).
 	 * @param string $ad       Ad category from detect_ad_category() ('' = not an ad click).
 	 * @param array  $visitor  ip / user_agent / country of the visitor (optional).
+	 * @param string $ai       AI source from detect_ai_source() ('' = not from an AI assistant).
 	 *
 	 * @return array|null found/redirect/score/source, or null when there is no redirect.
 	 */
-	public function resolve( $path, $referrer = '', $ad = '', array $visitor = array() ) {
+	public function resolve( $path, $referrer = '', $ad = '', array $visitor = array(), $ai = '' ) {
 		try {
 			if ( ! $this->is_configured() ) {
 				return null;
@@ -223,10 +282,11 @@ class No404_Client {
 			}
 
 			$ad     = in_array( $ad, self::AD_CATEGORIES, true ) ? $ad : '';
+			$ai     = in_array( $ai, self::AI_SOURCES, true ) ? $ai : '';
 			$key    = $this->cache_key( $path );
 			$cached = $this->cache->get( $key );
 			$cached = ( is_array( $cached ) && isset( $cached['source'] ) ) ? $cached : null;
-			if ( null !== $cached && '' === $ad ) {
+			if ( null !== $cached && '' === $ad && '' === $ai ) {
 				return $cached;
 			}
 
@@ -237,7 +297,7 @@ class No404_Client {
 			}
 
 			$response = $this->http->get(
-				$this->build_url( $path, $referrer, $ad ),
+				$this->build_url( $path, $referrer, $ad, $ai ),
 				$this->timeout_ms,
 				$this->user_agent,
 				array_merge( $this->auth_headers(), $this->visitor_headers( $visitor ) )
@@ -245,7 +305,7 @@ class No404_Client {
 
 			$result = $this->handle_response( $response, $key );
 
-			// An ad click that could not be answered falls back to what we knew.
+			// An ad / AI click that could not be answered falls back to what we knew.
 			return ( null === $result && null !== $cached ) ? $cached : $result;
 		} catch ( Exception $e ) {
 			return null;
@@ -744,9 +804,10 @@ class No404_Client {
 	 * @param string $path     The normalised path.
 	 * @param string $referrer Referrer.
 	 * @param string $ad       Ad category ('' = not an ad click).
+	 * @param string $ai       AI source ('' = not from an AI assistant).
 	 * @return string
 	 */
-	protected function build_url( $path, $referrer, $ad = '' ) {
+	protected function build_url( $path, $referrer, $ad = '', $ai = '' ) {
 		$query = 'path=' . rawurlencode( $path );
 
 		$referrer = trim( (string) $referrer );
@@ -755,6 +816,9 @@ class No404_Client {
 		}
 		if ( in_array( $ad, self::AD_CATEGORIES, true ) ) {
 			$query .= '&ad=' . $ad;
+		}
+		if ( in_array( $ai, self::AI_SOURCES, true ) ) {
+			$query .= '&src=' . $ai;
 		}
 
 		return $this->api_base . '/api/v1/resolve?' . $query;
@@ -913,6 +977,85 @@ class No404_Client {
 		}
 
 		return '';
+	}
+
+	/**
+	 * Works out whether the visitor clicked through from an AI assistant (ChatGPT,
+	 * Claude, Perplexity…). Returns only the CATEGORY — chatgpt, claude,
+	 * perplexity, gemini, copilot, meta, other — or ''. Mirrors the no404 server
+	 * (lib/ai-source.ts, detectAiReferral). Two pieces of evidence, first match wins:
+	 *
+	 *   1. `utm_source` from the RAW request URI (ChatGPT adds utm_source=chatgpt.com
+	 *      to outbound links and often sends no referrer — this is the only trace).
+	 *   2. The referrer's host.
+	 *
+	 * The raw utm value never leaves the site; only the category does.
+	 *
+	 * @param string $raw_uri  Request URI, e.g. /product?utm_source=chatgpt.com.
+	 * @param string $referrer The visitor's Referer header.
+	 * @return string
+	 */
+	public function detect_ai_source( $raw_uri, $referrer = '' ) {
+		$raw = (string) $raw_uri;
+		$q   = strpos( $raw, '?' );
+		if ( false !== $q ) {
+			$query = substr( $raw, $q + 1 );
+			$hash  = strpos( $query, '#' );
+			if ( false !== $hash ) {
+				$query = substr( $query, 0, $hash );
+			}
+
+			$params = array();
+			parse_str( $query, $params );
+			$source = ( isset( $params['utm_source'] ) && is_string( $params['utm_source'] ) ) ? strtolower( trim( $params['utm_source'] ) ) : '';
+			if ( '' !== $source && array_key_exists( $source, self::AI_UTM_SOURCES ) ) {
+				return self::AI_UTM_SOURCES[ $source ];
+			}
+		}
+
+		$host = self::referrer_host( $referrer );
+		if ( '' === $host ) {
+			return '';
+		}
+		foreach ( self::AI_REFERRER_HOSTS as $domain => $ai ) {
+			if ( $host === $domain || substr( $host, -strlen( '.' . $domain ) ) === '.' . $domain ) {
+				return $ai;
+			}
+		}
+
+		return '';
+	}
+
+	/**
+	 * The host of a referrer: lower case, without a trailing dot and without ONE
+	 * leading "www." or "m.". Only http(s); a scheme-less value (chatgpt.com/c/1)
+	 * is tried as https://. Anything else → ''.
+	 *
+	 * @param string $referrer Raw referrer.
+	 * @return string
+	 */
+	private static function referrer_host( $referrer ) {
+		$text = trim( (string) $referrer );
+		if ( '' === $text || preg_match( '/[\x00-\x1F\x7F]/', $text ) ) {
+			return '';
+		}
+
+		$parts = self::parse_url_parts( $text );
+		if ( is_array( $parts ) && isset( $parts['scheme'] ) ) {
+			$scheme = strtolower( $parts['scheme'] );
+			if ( 'http' !== $scheme && 'https' !== $scheme ) {
+				return '';
+			}
+		} else {
+			$parts = self::parse_url_parts( 'https://' . ltrim( $text, '/' ) );
+		}
+		if ( ! is_array( $parts ) || empty( $parts['host'] ) || ! is_string( $parts['host'] ) ) {
+			return '';
+		}
+
+		$host = rtrim( strtolower( $parts['host'] ), '.' );
+
+		return (string) preg_replace( '/^(www|m)\./', '', $host );
 	}
 
 	/**

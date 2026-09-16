@@ -71,7 +71,12 @@ class No404_Redirector {
 		// the raw click ID. Read from the raw URI, before the query string is dropped.
 		$ad = $this->client->detect_ad_category( $this->current_path() );
 
-		$result = $this->client->resolve( $path, $this->referrer(), $ad, $this->visitor() );
+		// AI assistants (ChatGPT, Claude…): likewise only the category, from the raw
+		// utm_source or the referrer host.
+		$referrer = $this->referrer();
+		$ai       = $this->client->detect_ai_source( $this->current_path(), $referrer );
+
+		$result = $this->client->resolve( $path, $referrer, $ad, $this->visitor(), $ai );
 		if ( null === $result || empty( $result['redirect'] ) ) {
 			return;
 		}

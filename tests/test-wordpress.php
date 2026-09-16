@@ -427,6 +427,19 @@ t_check(
 	'Bearer no404_TESTKEY'
 );
 
+echo "\n=== AI assistant: only the category (src=) is sent ===\n";
+simulate( '/eer21?utm_source=chatgpt.com', array( api_ok( $body ) ) );
+t_check( 'src=chatgpt from utm_source', false !== strpos( $GLOBALS['last_http_url'], '&src=chatgpt' ), true );
+t_check( 'the raw utm_source is not sent', false !== strpos( $GLOBALS['last_http_url'], 'utm_source' ), false );
+simulate( '/ai-referer', array( api_ok( $body ) ), 'https://www.perplexity.ai/search?q=a' );
+t_check( 'src=perplexity from the referrer', false !== strpos( $GLOBALS['last_http_url'], '&src=perplexity' ), true );
+simulate( '/organic', array( api_ok( $body ) ), 'https://www.google.com/' );
+t_check( 'no src for organic search', false !== strpos( $GLOBALS['last_http_url'], 'src=' ), false );
+simulate( '/eer22', array( api_ok( $body ) ) ); // fresh: cache the path
+$GLOBALS['http_calls'] = 0;
+simulate( '/eer22?utm_source=chatgpt.com', array( api_ok( $body ) ), null, false );
+t_check( 'an AI click skips the cache read', $GLOBALS['http_calls'], 1 );
+
 echo "\n=== Visitor: truncated IP, UA and country travel in headers ===\n";
 $_SERVER['REMOTE_ADDR']          = '10.0.0.5'; // the reverse proxy
 $_SERVER['HTTP_X_FORWARDED_FOR'] = '85.34.78.211, 10.0.0.5';

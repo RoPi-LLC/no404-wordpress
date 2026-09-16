@@ -4,7 +4,7 @@ Tags: 404, redirect, 301, seo, broken links
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.1.1
+Stable tag: 1.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -62,7 +62,7 @@ This plugin relies on the no404 service to work out where a broken URL should be
 
 A request is sent when a visitor hits a 404 page, and only then. Requests are not sent when:
 
-* the result for that path is already in the local cache (one hour by default),
+* the result for that path is already in the local cache (one hour by default); visits from an ad or an AI assistant are always looked up so they are counted,
 * the path is a static file or an administrative path (see the exclusion list in the settings),
 * the request is not a GET or HEAD request,
 * the service recently failed or the request limit was reached.
@@ -75,6 +75,8 @@ The setup wizard's "Create a free account" button opens no404's sign-up page wit
 
 * The path that returned 404, for example `/old-product`. Query strings are stripped before sending.
 * The referring URL, taken from the HTTP `Referer` header, when the browser supplies one.
+* When the visit came from an ad, the ad network as a single word (`google`, `microsoft`, `meta` or `other`), worked out on your server from the click ID or a paid `utm_medium`. The click ID itself is not sent.
+* When the visitor came from an AI assistant, the assistant as a single word (`chatgpt`, `claude`, `perplexity`, `gemini`, `copilot`, `meta` or `other`), worked out on your server from the `utm_source` parameter or the referring site. The `utm_source` value itself is not sent.
 * The visitor's IP address truncated to its network: the last part of an IPv4 address is set to zero (203.0.113.45 becomes 203.0.113.0), and only the first 48 bits of an IPv6 address are kept. Private and local addresses are not sent. This is what lets your dashboard tell bots from people and group requests by network.
 * A pseudonymous visitor ID: a keyed hash (HMAC-SHA256) of the visitor's IP address, computed on your server with a secret derived from your site's own security keys. no404 never receives the secret, so it cannot turn the ID back into an address or recognise the same visitor on another site. It only lets your dashboard count unique visitors.
 * The visitor's browser user agent (for example `Mozilla/5.0 (iPhone; …)`), used to classify the request as a bot or a browser and by device type.
@@ -116,11 +118,11 @@ Nothing breaks. The plugin fails open: if a request times out or errors, no redi
 
 = Does every 404 use up part of my quota? =
 
-No. Results are cached for an hour by default, so the same URL costs at most one lookup per hour. Results with no match are cached too. Static files and admin paths are never sent. The one exception is a visit from an ad click: it is always looked up, so paid traffic that lands on a 404 shows up in your dashboard.
+No. Results are cached for an hour by default, so the same URL costs at most one lookup per hour. Results with no match are cached too. Static files and admin paths are never sent. The exceptions are visits from an ad click or from an AI assistant such as ChatGPT: they are always looked up, so that traffic shows up in full in your dashboard.
 
 = Does the plugin send my visitors' click IDs to no404? =
 
-No. The query string never leaves your site. When a visit carries an ad click ID (gclid, msclkid) or a paid `utm_medium`, the plugin sends only the ad network — google, microsoft, meta or other.
+No. The query string never leaves your site. When a visit carries an ad click ID (gclid, msclkid) or a paid `utm_medium`, the plugin sends only the ad network — google, microsoft, meta or other. In the same way, when a visitor arrives from an AI assistant (a `utm_source` such as `chatgpt.com`, or a referrer such as claude.ai), only the assistant's name is sent — chatgpt, claude, perplexity, gemini, copilot, meta or other.
 
 = Does the plugin send my visitors' IP addresses? =
 
@@ -164,6 +166,10 @@ It follows your WordPress language setting. English is the default, and translat
 
 == Changelog ==
 
+= 1.2.0 =
+* New: recognises visitors arriving from AI assistants — ChatGPT, Claude, Perplexity, Gemini, Copilot, Meta AI and others — from the `utm_source` parameter (ChatGPT adds `utm_source=chatgpt.com` to its links) or the referring site. The plugin tells no404 only the assistant's name, never the query string, so your dashboard can show how much AI traffic lands on broken pages.
+* Like ad clicks, these visits skip the local cache so every one is counted. If no404 cannot be reached, the cached result is still used.
+
 = 1.1.1 =
 * Changed: the wizard's button to your no404 dashboard now opens the new dashboard address directly. The old address still redirects there, so nothing breaks on 1.1.0.
 
@@ -197,6 +203,9 @@ It follows your WordPress language setting. English is the default, and translat
 * Multisite support.
 
 == Upgrade Notice ==
+
+= 1.2.0 =
+Recognises visitors arriving from AI assistants (ChatGPT, Claude, Perplexity, Gemini, Copilot…) and reports only the category to no404.
 
 = 1.1.1 =
 Small fix: the setup wizard links straight to the new no404 dashboard address.

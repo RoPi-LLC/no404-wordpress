@@ -297,6 +297,68 @@ $cl->resolve( '/old-product' );
 $r = $cl->resolve( '/old-product', '', 'meta' );
 check( 'the cached redirect is still used', is_array( $r ) ? $r['redirect'] : null, 'https://store.example/new' );
 
+echo "\n=== detect_ai_source (same rules as the server's lib/ai-source.ts) ===\n";
+$ai_cases = array(
+	array( '/eer21?utm_source=chatgpt.com', '', 'chatgpt' ),
+	array( '/x?utm_medium=referral&utm_source=ChatGPT.com', '', 'chatgpt' ),
+	array( '/x', 'https://chatgpt.com/', 'chatgpt' ),
+	array( '/x', 'chatgpt.com/c/1', 'chatgpt' ),
+	array( '/x', 'https://www.perplexity.ai/search?q=a', 'perplexity' ),
+	array( '/x', 'https://claude.ai/chat/1', 'claude' ),
+	array( '/x', 'https://gemini.google.com/app', 'gemini' ),
+	array( '/x', 'https://copilot.microsoft.com/', 'copilot' ),
+	array( '/x?utm_source=perplexity', 'https://www.google.com/', 'perplexity' ),
+	array( '/x', 'https://www.google.com/', '' ),
+	array( '/x', 'https://evilchatgpt.com/', '' ),
+	array( '/x', 'https://chatgpt.com.evil.net/', '' ),
+	array( '/x?utm_source=chatbot-kampanya', '', '' ),
+	array( '/x?utm_source=constructor', '', '' ),
+	array( '/x?utm_source=__proto__', '', '' ),
+	array( '', 'about:blank', '' ),
+	// Extra edges.
+	array( '/x', 'https://m.meta.ai/', 'meta' ),
+	array( '/x', 'https://CHAT.OPENAI.COM./c/1', 'chatgpt' ),
+	array( '/x', 'https://sub.poe.com/', 'other' ),
+	array( '/x', 'javascript:alert(1)//chatgpt.com', '' ),
+	array( '/x?utm_source[]=chatgpt.com', '', '' ),
+	array( '/x#utm_source=chatgpt.com', '', '' ),
+);
+foreach ( $ai_cases as $case ) {
+	check(
+		sprintf( 'ai(%s, %s) -> %s', '' === $case[0] ? "''" : $case[0], '' === $case[1] ? "''" : $case[1], '' === $case[2] ? "''" : $case[2] ),
+		$c->detect_ai_source( $case[0], $case[1] ),
+		$case[2]
+	);
+}
+
+echo "\n=== resolve: an AI click sends only the category and skips the cache READ ===\n";
+$http  = new FakeHttp();
+$cache = new FakeCache();
+$cl    = make_client( $http, $cache );
+$http->queue = array( ok_response( $hit ), ok_response( $hit ) );
+$raw = '/eer21?utm_source=chatgpt.com';
+$cl->resolve( $raw );
+check( 'organic: no src in the URL', false !== strpos( $http->last_url, 'src=' ), false );
+$cl->resolve( $raw, '', '', array(), $cl->detect_ai_source( $raw, '' ) );
+check( 'an AI click reaches the API even when the path is cached', $http->calls, 2 );
+check( 'src=chatgpt is sent', false !== strpos( $http->last_url, '&src=chatgpt' ), true );
+check( 'the raw utm_source never leaves the site', false !== strpos( $http->last_url, 'utm_source' ), false );
+check( 'the query string is not in the path', false !== strpos( $http->last_url, 'path=' . rawurlencode( '/eer21' ) . '&' ), true );
+$cl->resolve( $raw );
+check( 'organic traffic still uses the cache', $http->calls, 2 );
+$cl->resolve( $raw, '', '', array(), 'chatgpt.com' );
+check( 'an unknown AI value is dropped and the cache is used', $http->calls, 2 );
+
+echo "\n=== resolve: an AI click falls back to the cache when no404 is down ===\n";
+$http  = new FakeHttp();
+$cache = new FakeCache();
+$cl    = make_client( $http, $cache );
+$http->queue = array( ok_response( $hit ), array( 'ok' => false, 'status' => 0, 'body' => '', 'error' => 'timeout' ) );
+$cl->resolve( '/old-product' );
+$r = $cl->resolve( '/old-product', '', '', array(), 'claude' );
+check( 'the API was asked for the AI click', $http->calls, 2 );
+check( 'the cached redirect is still used', is_array( $r ) ? $r['redirect'] : null, 'https://store.example/new' );
+
 echo "\n=== An unconfigured plugin stays silent ===\n";
 $http = new FakeHttp();
 $cl   = new No404_Client( array( 'api_base' => 'https://no404.tr', 'api_key' => '' ), $http, new FakeCache() );
